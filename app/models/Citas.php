@@ -108,7 +108,7 @@ class Citas extends Models implements IModels
     }
 
     /**
-     * Consulta el detalle de la cita
+     * Consulta el detalle de la cita.
      */
     public function obtenerDetalleCita()
     {
