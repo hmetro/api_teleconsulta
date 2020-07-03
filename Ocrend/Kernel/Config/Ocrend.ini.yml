@@ -1,0 +1,185 @@
+# This file is part of the Ocrend Framewok 3 package.
+#
+# (c) Ocrend Software <info@ocrend.com>
+#
+# For the full copyright and license information, please view the LICENS
+# file that was distributed with this source code.
+
+# Configuración de la base de datos
+database:
+  default_driver: oracle_pruebas
+  drivers:
+    mysql: 
+      host: localhost
+      user: admin_hmetro
+      pass: 1501128480
+      name: admin_hmetro
+      port: default
+      socket: default
+    oracle: 
+      dbname: conclina
+      user: usweb1
+      password : usweb1
+      port: 1521
+      host: 172.16.3.247
+      servicename: conclina
+      service: true
+      driver: oci8
+      charset: UTF8
+    oracle_metrored: 
+      dbname: metroamb
+      user: mchang1
+      password: mchang5080
+      port: 1521
+      host: 172.16.3.247
+      servicename: metroamb
+      service: true
+      driver: oci8
+      charset: UTF8
+    oracle_pruebas: 
+      dbname: desa
+      user: gema
+      password : gemad15
+      port: 1521
+      host: 172.16.9.77
+      driver: oci8
+      charset: UTF8
+    sqlite3:
+      file: '___ROOT___Ocrend/Kernel/Database/Drivers/Sqlite/db.sqlite3'
+
+
+
+    
+# Configuración de servidor SMTP
+mailer:
+  host: smtp.trx.icommarketing.com
+  user: 6f347f1d-faa5-4989-aee4-a955c677dc6b
+  pass: 6f347f1d-faa5-4989-aee4-a955c677dc6b
+  from: web@hmetro.med.ec
+  port: 587
+  logo:
+
+# Configuración de twig
+twig:
+  cache: false
+  compiled_dir: false # ./app/templates/.compiled/
+  charset: UTF-8
+  strict_variables: false
+  autoescape: html
+  
+# Configuración del sitio
+build:
+  production: false
+  name: Web API REST v1.0.0
+  url: http://api.hospitalmetropolitano.org/teleconsulta/beta/
+  ducumentosRetencionesProv: '//172.16.3.125/face/CONCLINARETENCIONES/TestTxtXml/Procesadas/Autorizados/ComprobantesRetenciones/'
+  timezone: America/Guayaquil
+  version: 3.0.1
+
+# Configuración de cookies
+sessions:
+  lifetime: 3600
+  user_cookie:
+    enable: true
+    key_encrypt: X8f3p@9Vde0WvKauzI8CMX
+    lifetime: 3600
+
+# Configuración de la api
+api:
+  active: true
+  origin: '*' 
+  url: https://api.hospitalmetropolitano.org/teleconsulta/beta/v1/
+
+# Configuración de ruta
+router:
+  ssl: false
+  path: api.hospitalmetropolitano.org/teleconsulta/beta/
+
+
+# Errores Globales de la api  ERROR MAPERAR ERRORES DE PAGOS 4020
+errors:
+  notParameters: 
+    message: ¡Error! No estan definidos todos los parámetros para este request.
+    code: 4000
+  notDNI: 
+    message: ¡Error! Cédula RUC o Pasaporte es obligatorio.
+    code: 4001
+  notEmailRegister: 
+    message: ¡Error! Cédula RUC o Pasaporte ingresado no tiene un correo electrónico registrado para crear una cuenta electrónica.
+    code: 4002
+  notAvalibleDNI: 
+    message: ¡Error! Cédula RUC o Pasaporte ingresado no tiene un formato válido.
+    code: 4003
+  notExistedGema: 
+    message: ¡Error! Cédula RUC o Pasaporte ingresado no existe en nuestra base de datos o presenta inconsistencias.
+    code: 4004
+  notFormatPass: 
+    message: ¡Error! Pasaporte o Documento extrangero no puede ser mayor a 25 caracteres.
+    code: 4005
+  notActiveAccount: 
+    message: '¡Error! Cuenta electrónica sin activar. Active su cuenta mediante el correo enviado a: '
+    code: 4007
+  notRegisterAccount: 
+    message: ¡Error! Cuenta electrónica no esta registrada.
+    code: 4006
+  AccountisRegistered: 
+    message: ¡Error! Cuenta electrónica ya esta registrada.
+    code: 4008
+  notFormatEmail: 
+    message: ¡Error! Correo electrónico no tiene un formato válido.
+    code: 4009
+  incorrectMailRegister: 
+    message: ¡Error! Correo electrónico no esta asociado al usuario.
+    code: 4011
+  incorrectPassword: 
+    message: ¡Error! Contraseña incorrecta.
+    code: 4013
+  codigoParametroNumerico: 
+    message: Código de parámetro debe ser numérico.
+    code: 4015
+  codigoMedicoNumerico: 
+    message: Código del médico debe ser numérico.
+    code: 4016 
+  codigoMedicoObligatorio: 
+    message: Código del médico es obligatorio.
+    code: 4017 
+  startDateObligatorio: 
+    message: Fecha de inicio es obligatorio.
+    code: 4018
+  startDateIncorrecta: 
+    message: Fecha inicial no puede ser mayor a fecha final.
+    code: 4019
+  endDateObligatorio: 
+    message: Fecha final es obligatorio.
+    code: 4020
+  lengthObligatorio: 
+    message: Length es obligatorio.
+    code: 4021
+  lengthIncorrecto: 
+    message: Length debe ser mayor que cero (0).
+    code: 4022
+  startObligatorio: 
+    message: Start es obligatorio.
+    code: 4023
+  startIncorrecto: 
+    message: Start debe ser mayor o igual a cero (0).
+    code: 4024
+  codigoHorarioNumerico: 
+    message: Código del horario debe ser numérico.
+    code: 4025
+  codigoHorarioObligatorio: 
+    message: Código del horario es obligatorio.
+    code: 4026 
+  numeroTurnoNumerico: 
+    message: Número de turno debe ser numérico.
+    code: 4027
+  numeroTurnoObligatorio: 
+    message: Número de turno es obligatorio.
+    code: 4028 
+  noExistenResultados: 
+    message: No existen resultados para la consulta.
+    code: 4080 
+  codigoErrorInfraestructura: 
+    message: Consulte con el Administrador del Sistema.
+    code: 9999     
+    
