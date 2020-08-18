@@ -16,7 +16,7 @@ database:
       name: admin_hmetro
       port: default
       socket: default
-    oracle: 
+    oracle_produccion: 
       dbname: conclina
       user: usweb1
       password : usweb1
@@ -46,9 +46,6 @@ database:
       charset: UTF8
     sqlite3:
       file: '___ROOT___Ocrend/Kernel/Database/Drivers/Sqlite/db.sqlite3'
-
-
-
     
 # Configuración de servidor SMTP
 mailer:

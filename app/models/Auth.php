@@ -64,8 +64,8 @@ class Auth extends Models implements IModels
         $data['user_token'] = true;
 
         $token = array(
-            // 'exp'  => strtotime('+1 minute', $time),
-            'exp'  => $time + (60 * 60),
+            'exp'  => strtotime('+60 minute', $time),
+            //'exp'  => $time + (60 * 60),
             // 'exp'  => $time--,
             'aud'  => $this->Aud(),
             'data' => $data,
