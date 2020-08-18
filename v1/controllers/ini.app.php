@@ -46,6 +46,13 @@ $app->before(function () use ($app) {
                 and explode('/', $http->getPathInfo())[1] != 'portafolio'
                 and explode('/', $http->getPathInfo())[1] != 'forms'
                 and explode('/', $http->getPathInfo())[1] != 'sms'
+                and explode('/', $http->getPathInfo())[1] != 'facturas'
+                and explode('/', $http->getPathInfo())[1] != 'pacientes'
+                and explode('/', $http->getPathInfo())[1] != 'citas'
+                and explode('/', $http->getPathInfo())[1] != 'medicos'
+                and explode('/', $http->getPathInfo())[1] != 'historias-clinicas'
+                //and explode('/', $http->getPathInfo())[1] != 'diagnosticos'
+                and explode('/', $http->getPathInfo())[1] != 'agendas-medico'
             ) {
 
                 # Verificar SI EXISTE TOKEN Y SI ES VALIDO
@@ -110,9 +117,9 @@ $app->after(function (Request $request, Response $response) {
         $response->setStatusCode(200);
     }
 
-    $response->headers->set('Access-Control-Allow-Origin', $config['api']['origin']);
-    $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    #$response->headers->set('Access-Control-Allow-Origin', $config['api']['origin']);
+    #$response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    #$response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
 });
 
