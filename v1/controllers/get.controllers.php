@@ -32,10 +32,10 @@ $app->get('/', function () use ($app) {
 
 });
 
-$app->get('/auth/verify/{token}', function ($token) use ($app) {
+/*$app->get('/auth/verify/{token}', function ($token) use ($app) {
     $u = new Model\Users;
     return $app->json($u->verify_TOKEN($token));
-});
+});*/
 
 /**
  * Obtiene los datos del usuario conectado

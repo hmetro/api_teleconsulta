@@ -19,6 +19,8 @@ use Ocrend\Kernel\Models\Models;
 use Ocrend\Kernel\Models\ModelsException;
 use Ocrend\Kernel\Models\Traits\DBModel;
 use Ocrend\Kernel\Router\IRouter;
+use Exception;
+use app\models\Pacientes;
 
 /**
  * Modelo Register
@@ -50,17 +52,92 @@ class Register extends Models implements IModels
 
     # Variables de Clase
     private $DNI         = null;
+    private $PASS        = null;
+    private $TOKEN       = null;
+    private $EMAIL       = null;
+    private $codigoInstitucion  = 1; //Hospital Metropolitano es siempre 1
+    private $tipoIdentificacion = null;
+    private $primerApellido = null;
+    private $segundoApellido = null;
+    private $primerNombre = null;
+    private $segundoNombre = null;
+    private $fechaNacimiento = null;
+    private $estadoCivil = null;
+    private $genero = null;
+    private $calle = null;
+    private $numero = null;
+    private $telefono = null;
+    private $celular = null;
+    private $pais = null;
+    private $provincia = null;
+    private $ciudad = null;
+    private $distrito = null;
+
+
     private $COD_PERSONA = null;
     private $USER        = null;
     private $CP_PTE      = null;
     private $CP_MED      = null;
-    private $CP_PRO      = null;
-    private $EMAIL       = null;
-    private $PASS        = null;
-    private $TOKEN       = null;
+    private $CP_PRO      = null;    
     private $_conexion   = null;
     private $errors      = null;
     private $proveedor   = null;
+
+
+     /**
+     * Registrar paciente de Teleconsulta
+     *
+     * @return array : Con información de éxito/falla al inicio de sesión.
+     */
+    public function registrarPacienteTeleconsulta(): array
+    {
+        try {
+            global $http;            
+
+            # Definir parametros de clase
+            $this->setParameters();
+
+            # Validar FORMATO DNI si es cedula o RUC NATURAL
+            $this->validacionDNI();
+
+            # URL PARA ACTTIVAR CUENTA
+            $token = str_shuffle(md5(time()) . md5(time()));
+
+            # $link  = $http->getUri() . '/verify/' . $token . '&req=auth';
+            $link = $token . '&req=auth';
+
+            $this->PASS  = Helper\Strings::hash($this->PASS);
+            $this->TOKEN = $token;
+
+            //$this->registroWeb();
+            //Registra el paciente en la base de datos
+            $paciente = new Pacientes;
+            $paciente->crear($this->codigoInstitucion, $this->tipoIdentificacion, $this->DNI, $this->primerApellido, $this->segundoApellido, $this->primerNombre, $this->segundoNombre, $this->fechaNacimiento, $this->genero, $this->PASS, $this->TOKEN, $this->calle, $this->celular, $this->EMAIL);
+
+            return array(
+                'status'  => true,
+                'message' => 'Usuario registrado con éxito. Cuenta electrónica debe activarse.',
+                'verify'  => $link,
+            );
+
+        } catch (ModelsException $e) {
+
+            return array(
+                'status'    => false,
+                'message'   => $e->getMessage(),
+                'errorCode' => $e->getCode(),
+            );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,                    
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => $ex->getCode()
+                );
+
+        }
+    }
 
     private function conectar_Oracle()
     {
@@ -80,9 +157,9 @@ class Register extends Models implements IModels
 
         $this->errors = $config['errors'];
 
-        $DNI   = strtoupper($http->request->get('DNI'));
-        $PASS  = $http->request->get('PASS');
-        $EMAIL = Helper\Strings::remove_spaces(strtolower($http->request->get('EMAIL')));
+        $DNI   = strtoupper($http->request->get('identificacion'));
+        $PASS  = $http->request->get('clave');
+        $EMAIL = Helper\Strings::remove_spaces(strtolower($http->request->get('email')));
 
         $DNI   = $this->db->scape($DNI);
         $PASS  = $this->db->scape($PASS);
@@ -105,6 +182,88 @@ class Register extends Models implements IModels
         $this->DNI   = $DNI;
         $this->PASS  = $PASS;
         $this->EMAIL = $EMAIL;
+
+        $this->tipoIdentificacion = $http->request->get('tipoIdentificacion');
+        $this->primerApellido = $http->request->get('primerApellido');
+        $this->segundoApellido = $http->request->get('segundoApellido');
+        $this->primerNombre = $http->request->get('primerNombre');
+        $this->segundoNombre= $http->request->get('segundoNombre');
+        $this->fechaNacimiento= $http->request->get('fechaNacimiento');
+        //$this->estadoCivil= $http->request->get('estadoCivil');
+        $this->genero= $http->request->get('genero');
+        $this->calle= $http->request->get('calle');
+        //$this->numero= $http->request->get('numero');
+        //$this->telefono= $http->request->get('telefono');
+        $this->celular= $http->request->get('celular');
+        //$this->pais= $http->request->get('pais');
+        //$this->provincia= $http->request->get('provincia');
+        //$this->ciudad= $http->request->get('ciudad');
+        //$this->distrito= $http->request->get('distrito');
+
+        //Tipo de identificación
+        if ($this->tipoIdentificacion == null){
+             throw new ModelsException($config['errors']['tipoIdentificacionObligatorio']['message'], 1);
+        }
+
+        //Primer apellido
+        if ($this->primerApellido == null){
+             throw new ModelsException($config['errors']['primerApellidoObligatorio']['message'], 1);
+        }
+
+        //Primer nombre
+        if ($this->primerNombre == null){
+             throw new ModelsException($config['errors']['primerNombreObligatorio']['message'], 1);
+        }
+
+        //Fecha de nacimiento
+        if ($this->fechaNacimiento == null){
+             throw new ModelsException($config['errors']['fechaNacimientoObligatorio']['message'], 1);
+        }
+
+        //Estado civil
+        /*if ($this->estadoCivil == null){
+             throw new ModelsException($config['errors']['estadoCivilObligatorio']['message'], 1);
+        }*/
+
+        //Genero
+        if ($this->genero == null){
+             throw new ModelsException($config['errors']['generoObligatorio']['message'], 1);
+        }
+
+        //Calle
+        if ($this->calle == null){
+             throw new ModelsException($config['errors']['calleObligatorio']['message'], 1);
+        }
+
+        //Ciudad
+        /*if ($this->ciudad == null){
+             throw new ModelsException($config['errors']['ciudadObligatorio']['message'], 1);
+        }*/
+
+        //Celular
+        if ($this->celular == null){
+             throw new ModelsException($config['errors']['celularObligatorio']['message'], 1);
+        }
+
+        //Pais
+        /*if ($this->pais== null){
+             throw new ModelsException($config['errors']['paisObligatorio']['message'], 1);
+        }*/
+
+        //Provincia
+        /*if ($this->provincia== null){
+             throw new ModelsException($config['errors']['provinciaObligatorio']['message'], 1);
+        }*/
+
+        //Ciudad
+        /*if ($this->ciudad == null){
+             throw new ModelsException($config['errors']['ciudadObligatorio']['message'], 1);
+        }*/
+
+        //Distrito
+        /*if ($this->distrito == null){
+             throw new ModelsException($config['errors']['distritoObligatorio']['message'], 1);
+        }*/
     }
 
     private function setParameters_Lostpass()
@@ -170,8 +329,7 @@ class Register extends Models implements IModels
 
             # VALIDAR FORMATO SI ES CEDULA
             if (strlen(Helper\Strings::remove_spaces($cedula)) == 10) {
-
-                if (!$dni->validarCedula($cedula)) {
+                if (!$dni->validarCedula($cedula)) {                    
                     throw new ModelsException($this->errors['notAvalibleDNI']['message'], $this->errors['notAvalibleDNI']['code']);
                 }
             }

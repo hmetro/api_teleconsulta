@@ -16,7 +16,7 @@ database:
       name: admin_hmetro
       port: default
       socket: default
-    oracle: 
+    oracle_produccion: 
       dbname: conclina
       user: usweb1
       password : usweb1
@@ -46,9 +46,6 @@ database:
       charset: UTF8
     sqlite3:
       file: '___ROOT___Ocrend/Kernel/Database/Drivers/Sqlite/db.sqlite3'
-
-
-
     
 # Configuración de servidor SMTP
 mailer:
@@ -147,7 +144,7 @@ errors:
     message: Fecha de inicio es obligatorio.
     code: 4018
   startDateIncorrecta: 
-    message: Fecha inicial no puede ser mayor a fecha final.
+    message: Fecha de inicio no puede ser mayor a fecha final.
     code: 4019
   endDateObligatorio: 
     message: Fecha final es obligatorio.
@@ -176,10 +173,342 @@ errors:
   numeroTurnoObligatorio: 
     message: Número de turno es obligatorio.
     code: 4028 
+  codigoConsultaNumerico: 
+    message: Código de la consulta debe ser numérico.
+    code: 4029
+  codigoConsultaObligatorio: 
+    message: Código de la consulta es obligatorio.
+    code: 4030 
+  codigoEspecialidadMedicoNumerico: 
+    message: Código de la especialidad del médico debe ser numérico.
+    code: 4031
+  codigoEspecialidadMedicoObligatorio: 
+    message: Código de la especialidad del médico es obligatorio.
+    code: 4032 
+  codigoLugarAtencionMedicoNumerico: 
+    message: Código del lugar de la atención debe ser numérico.
+    code: 4033
+  codigoLugarAtencionObligatorio: 
+    message: Código del lugar de la atención es obligatorio.
+    code: 4034 
+  correoFacturaIsEmail: 
+    message: Correo de la factura debe tener el formato de correo electrónico.
+    code: 4035
+  correoFacturaObligatorio: 
+    message: Correo de la factura es obligatorio.
+    code: 4036 
+  identificacionObligatorio: 
+    message: Identificación es obligatoria.
+    code: 4037   
+  tipoIdentificacionObligatorio: 
+    message: Tipo de identificación es obligatorio.
+    code: 4038
+  primerApellidoObligatorio: 
+    message: Primer apellido es obligatorio.
+    code: 4039
+  primerNombreObligatorio: 
+    message: Primer nombre es obligatorio.
+    code: 4040
+  fechaNacimientoObligatorio: 
+    message: Fecha de nacimiento es obligatorio.
+    code: 4041
+  estadoCivilObligatorio: 
+    message: Estado civil es obligatorio.
+    code: 4042
+  generoObligatorio: 
+    message: Género es obligatorio.
+    code: 4043
+  calleObligatorio: 
+    message: Calle es obligatorio.
+    code: 4044
+  ciudadObligatorio: 
+    message: Ciudad es obligatorio.
+    code: 4045
+  celularObligatorio: 
+    message: Celular es obligatorio.
+    code: 4046
+  emailObligatorio: 
+    message: Correo electrónico es obligatorio.
+    code: 4047
+  paisObligatorio: 
+    message: País es obligatorio.
+    code: 4048
+  provinciaObligatorio: 
+    message: Provincia es obligatorio.
+    code: 4049
+  ciudadObligatorio: 
+    message: Ciudad es obligatorio.
+    code: 4050
+  distritoObligatorio: 
+    message: Distrito es obligatorio.
+    code: 4051  
+  numeroHistoriaClinicaObligatorio: 
+    message: Número de historia clínica es obligatorio.
+    code: 4052
+  numeroHistoriaClinicaNumerico: 
+    message: Número de historia clínica debe ser numérico.
+    code: 4053
+  numeroAdmisionObligatorio: 
+    message: Número de admisión es obligatorio.
+    code: 4054
+  numeroAdmisionNumerico: 
+    message: Número de admisión debe ser numérico.
+    code: 4055
+  codigoOrganigramaObligatorio: 
+    message: Código del organigrama es obligatorio.
+    code: 4056
+  codigoOrganigramaNumerico: 
+    message: Código del organigrama debe ser numérico.
+    code: 4057
+  fechaInicialObligatorio: 
+    message: Fecha inicial es obligatorio.
+    code: 4058
+  fechaInicialIncorrecta: 
+    message: Fecha inicial no puede ser mayor a fecha final.
+    code: 4059
+  fechaFinalObligatorio: 
+    message: Fecha final es obligatorio.
+    code: 4060
+  horaInicialObligatorio: 
+    message: Hora inicial es obligatorio.
+    code: 4061
+  horaInicialIncorrecta: 
+    message: Hora inicial no puede ser mayor a hora final.
+    code: 4062
+  horaFinalObligatorio: 
+    message: Hora final es obligatorio.
+    code: 4063
+  duracionObligatorio: 
+    message: Duración es obligatorio.
+    code: 4064
+  lunesObligatorio: 
+    message: Lunes es obligatorio.
+    code: 4065
+  martesObligatorio: 
+    message: Martes es obligatorio.
+    code: 4066
+  miercolesObligatorio: 
+    message: Miércoles es obligatorio.
+    code: 4067
+  juevesObligatorio: 
+    message: Jueves es obligatorio.
+    code: 4068
+  viernesObligatorio: 
+    message: Viernes es obligatorio.
+    code: 4069
+  sabadoObligatorio: 
+    message: Sábado es obligatorio.
+    code: 4070
+  domingoObligatorio: 
+    message: Domingo es obligatorio.
+    code: 4071
+  tipoHorarioObligatorio: 
+    message: Tipo de horario es obligatorio.
+    code: 4072
+  tipoHorarioIncorrecta: 
+    message: Tipo de horario debe ser numérico.
+    code: 4073
+  codigoPersonaObligatorio: 
+    message: Código de persona es obligatorio.
+    code: 4074
+  codigoPersonaNumerico: 
+    message: Código de persona debe ser numérico.
+    code: 4075
+  historiaClinicaObligatorio:
+    message: Historia clínica obligatoria.
+    code: 4076
+  seccionMotivoConsultaObligatorio:
+    message: Sección motivo de consulta obligatorio.
+    code: 4077
+  motivoConsultaObligatorio:
+    message: Motivo de consulta obligatorio.
+    code: 4078
+  antecedentesPersonalesObligatorio:
+    message: Antecedentes personales obligatorio.
+    code: 4079
   noExistenResultados: 
     message: No existen resultados para la consulta.
     code: 4080 
+  enfermedadActualObligatorio:
+    message: Enfermedad actual obligatorio.
+    code: 4081
+  seccionRevisionOrganosObligatorio:
+    message: Sección revisión órganos obligatorio.
+    code: 4082
+  seccionAntecedentesFamiliaresObligatorio:
+    message: Sección antecedentes familiares obligatorio.
+    code: 4083
+  seccionSignosVitalesObligatorio:
+    message: Sección signos vitales obligatorio.
+    code: 4084
+  seccionExamenFisicoObligatorio:
+    message: Sección examen físico obligatorio.
+    code: 4085
+  seccionDiagnosticosObligatorio:
+    message: Sección diagnósticos obligatorio.
+    code: 4086    
+  seccionEvolucionesObligatorio:
+    message: Sección evoluciones obligatorio.
+    code: 4087
+  seccionPrescripcionesObligatorio:
+    message: Sección prescripciones obligatorio.
+    code: 4088
+  numeroMesObligatorio:
+    message: Número de mes obligatorio.
+    code: 4089
+  codigoHorarioNuevoNumerico: 
+    message: Código del horario nuevo debe ser numérico.
+    code: 4090
+  codigoHorarioNuevoObligatorio: 
+    message: Código del horario nuevo es obligatorio.
+    code: 4091
+  numeroTurnoNuevoNumerico: 
+    message: Número de turno nuevo debe ser numérico.
+    code: 4092
+  numeroTurnoNuevoObligatorio: 
+    message: Número de turno nuevo es obligatorio.
+    code: 4093 
+  sentidosObligatorio: 
+    message: Sentidos es obligatorio.
+    code: 4094
+  cardioVascularObligatorio: 
+    message: Cardio vascular es obligatorio.
+    code: 4095
+  genitalObligatorio: 
+    message: Genital es obligatorio.
+    code: 4096
+  muscEsqueleticoObligatorio: 
+    message: Músculo esquelético es obligatorio.
+    code: 4097  
+  hemoLinfaticoObligatorio: 
+    message: Hemo linfático es obligatorio.
+    code: 4098
+  respiratorioObligatorio: 
+    message: Respiratorio es obligatorio.
+    code: 4099
+  digestivoObligatorio: 
+    message: Digestivo es obligatorio.
+    code: 4100
+  urinarioObligatorio: 
+    message: Urinario es obligatorio.
+    code: 4101
+  endocrinoObligatorio: 
+    message: Endócrino es obligatorio.
+    code: 4102
+  nerviosoObligatorio: 
+    message: Nervioso es obligatorio.
+    code: 4103
+  cardiopatiaObligatorio: 
+    message: Cardiopatía es obligatorio.
+    code: 4104
+  diabetesObligatorio: 
+    message: Diabetes es obligatorio.
+    code: 4105
+  enfermedadVascularObligatorio: 
+    message: Enfermedad vascular es obligatorio.
+    code: 4106
+  hipertensionObligatorio: 
+    message: Hipertensión es obligatorio.
+    code: 4107
+  cancerObligatorio: 
+    message: Cáncer es obligatorio.
+    code: 4108
+  tuberculosisObligatorio: 
+    message: Tuberculosis es obligatorio.
+    code: 4109
+  enfermendadMentalObligatorio: 
+    message: Enfermedad mental es obligatorio.
+    code: 4110
+  enfermedadInfecciosaObligatorio: 
+    message: Enfermedad infecciosa es obligatorio.
+    code: 4111
+  malformacionObligatorio: 
+    message: Malformación es obligatorio.
+    code: 4112
+  otroObligatorio: 
+    message: Otro es obligatorio.
+    code: 4113
+  descripcionEvolucionObligatorio: 
+    message: Descripción de la evolución es obligatorio.
+    code: 4114
+  camposSignosVitalesObligatorio: 
+    message: Al menos un campo (sin tomar en cuenta la fecha) de signos vitales debe ser obligatorio.
+    code: 4115
+  temperaturaBucalNumericoNumerico: 
+    message: Temperatura bucal debe ser numérico.
+    code: 4116
+  temperaturaAxiliarNumerico: 
+    message: Temperatura axilar debe ser numérico.
+    code: 4117
+  temperaturaRectalNumerico: 
+    message: Temperatura rectal debe ser numérico.
+    code: 4118
+  taSistolicaNumerico: 
+    message: Ta Sistólica  debe ser numérico.
+    code: 4119
+  taDiastolicaNumerico: 
+    message: ta Diatólica debe ser numérico.
+    code: 4120
+  pulsoNumerico: 
+    message: Pulso debe ser numérico.
+    code: 4121
+  frecuenciaRespiratoriaNumerico: 
+    message: Frecuencia respiratoria debe ser numérico.
+    code: 4122
+  perimetroCefNumerico: 
+    message: Perímetro CEF debe ser numérico.
+    code: 4123
+  pesoNumerico: 
+    message: Peso debe ser numérico.
+    code: 4124
+  tallaNumerico: 
+    message: Talla debe ser numérico.
+    code: 4125
+  imcNumerico: 
+    message: IMC debe ser numérico.
+    code: 4126
+  camposExamenFisicoObligatorio: 
+    message: Al menos un campo del examen físico debe ser ingresado.
+    code: 4127
+  codigoDiagnosticoObligatorio: 
+    message: Código del diagnóstico es obligatorio.
+    code: 4128
+  clasificacionDiagnosticoObligatorio: 
+    message: Clasificación del diagnóstico es obligatorio.
+    code: 4129
+  principalDiagnosticoObligatorio: 
+    message: Principal diagnóstico es obligatorio.
+    code: 4130
+  grupoDiagnosticoObligatorio: 
+    message: Grupo diagnóstico es obligatorio.
+    code: 4131
+  descripcionPrescripcionObligatorio: 
+    message: Prescripción es obligatorio.
+    code: 4132
+  camposMotivoConsultaObligatorio:
+    message: Al menos un campo del motivo de consulta debe ser ingresado.
+    code: 4132
+  camposRevisionOrganosObligatorio:
+    message: Al menos un campo de la revisión de órganos debe ser ingresado.
+    code: 4133
+  camposAntecedentesFamiliaresObligatorio:
+    message: Al menos un campo de los antecedentes familiares debe ser ingresado.
+    code: 4134
+  fechaSignosVitalesObligatorio:
+    message: Fecha de los signos vitales es obligatorio.
+    code: 4135
+  startDateIncorrectaFechaHoy: 
+    message: Fecha de inicio no puede ser mayor que la fecha de hoy.
+    code: 4036
+  endDateIncorrectaFechaHoy: 
+    message: Fecha fin no puede ser menor que la fecha de hoy.
+    code: 4037
+  startDateIncorrectaFechaAyer: 
+    message: Fecha de inicio no puede ser mayor que la fecha de ayer.
+    code: 4038
+  startDateMenorFechaHoy: 
+    message: Fecha de inicio no puede ser menor que la fecha de hoy.
+    code: 4039
   codigoErrorInfraestructura: 
     message: Consulte con el Administrador del Sistema.
     code: 9999     
-    

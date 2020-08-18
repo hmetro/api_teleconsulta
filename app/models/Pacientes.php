@@ -18,6 +18,7 @@ use Ocrend\Kernel\Models\IModels;
 use Ocrend\Kernel\Models\Models;
 use Ocrend\Kernel\Models\ModelsException;
 use Ocrend\Kernel\Router\IRouter;
+use Exception;
 
 /**
  * Modelo Pacientes
@@ -35,6 +36,675 @@ class Pacientes extends Models implements IModels
     private $startDate   = null;
     private $endDate     = null;
     private $_conexion   = null;
+
+    #Paciente
+    private $codigoEspecialidadMedico;
+    private $codigoHorario;
+    private $fechaNacimiento;
+    private $codigoConsulta;
+    private $indentificacionPaciente;
+    private $valorConsulta;
+    private $numeroTurno;
+    private $primerApellidoPaciente;
+    private $primerNombrePaciente;
+    private $codigoLugarAtencion;
+    private $genero;
+    private $tipoIdentificacionPaciente;
+    private $valorCobertura;
+    private $codigoPersona;
+
+    private $codigoInstitucion;
+    private $tipoIdentificacion;
+    private $identificacion;
+    private $primerApellido;
+    private $segundoApellido;
+    private $primerNombre;
+    private $segundoNombre;
+    private $estadoCivil;
+    private $calle;
+    private $numero;    
+    private $celular;
+    private $email;
+    private $pais;
+    private $provincia;
+    private $ciudad;
+    private $distrito;
+
+
+    #Datos de Factura
+    private $apellidosFactura;
+    private $correoFactura;
+    private $direccionFactura;
+    private $identificacionFactura;
+    private $nombresFactura;
+    private $tipoIdentificacionFactura;
+                                                    
+    #Datos de TC
+    private $identificacionTitular;
+    private $nombreTitular;
+    private $numeroAutorizacion;
+    private $numeroVoucher;
+    private $tipoTarjetaCredito;
+    private $telefono;
+
+    # Variables de clase    
+    private $conexion;
+
+    /**
+     * Obtiene los datos del paciente
+    */
+    public function obtenerDatosPaciente()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false;
+        $datosPaciente[] = null;
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada            
+            //Código de la persona
+            if ($this->codigoPersona == null){
+                 throw new ModelsException($config['errors']['codigoPersonaObligatorio']['message'], 1);
+            } else {
+                //Validaciones de tipo de datos y rangos permitidos
+                if (!is_numeric($this->codigoPersona)) {
+                        throw new ModelsException($config['errors']['codigoPersonaNumerico']['message'], 1);
+                }
+            }
+
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DATOS_PACIENTE(:pn_cod_persona, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_cod_persona",$this->codigoPersona,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $datosPaciente = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $datosPaciente[] = array(
+                    'primerApellido' => $row[0],
+                    'segundoApellido' => $row[1],
+                    'primerNombre' => $row[2],
+                    'segundoNombre' => $row[3],
+                    'genero' => $row[4],
+                    'estadoCivil' => $row[5],
+                    'fechaNacimiento' => $row[6],
+                    'cedula' => $row[7],
+                    'pasaporte' => $row[8],
+                    'ruc' => $row[9],
+                    'direcciones' => $this->obtenerDirecciones($this->codigoPersona, $stid),
+                    'mediosContacto' => $this->obtenerMediosContacto($this->codigoPersona, $stid)
+                );               
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return array(
+                    'status' => true,                    
+                    'data'   => $datosPaciente
+                        );
+            }
+            else {
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+            }
+
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
+
+    /**
+     * Obtiene las direcciones asociadas al paciente
+    */
+    public function obtenerDirecciones($codigoPersona, $stid)
+    {
+        global $config;
+
+        //Inicialización de variables
+        $pc_datos = null;
+        $existeDatos = false;
+        $direcciones[] = null;
+
+        try {         
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DIRECCION_PACIENTE(:pn_cod_persona, :pc_datos); END;");
+           
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_cod_persona",$codigoPersona,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $direcciones = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $direcciones[] = array(
+                    'codigoDireccion' => $row[0],
+                    'tipoDireccion'=> $row[1],
+                    'calle' => $row[2],
+                    'numero' => $row[3],
+                    'interseccion' => $row[4],
+                    'referencia' => $row[5],
+                    'pais' => $row[6],
+                    'provincia' => $row[7],
+                    'canton' => $row[8]
+                );
+                
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return $direcciones;
+            }
+            else {
+                return [];
+            }
+               
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+        }
+    }
+
+
+    /**
+     * Obtiene los medios de contacto del paciente
+    */
+    public function obtenerMediosContacto($codigoPersona, $stid)
+    {
+        global $config;
+
+        //Inicialización de variables
+        $pc_datos = null;
+        $existeDatos = false;
+        $mediosContacto[] = null;
+
+        try {         
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_CONTACTOS_PACIENTE(:pn_cod_persona, :pc_datos); END;");
+           
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_cod_persona",$codigoPersona,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $mediosContacto = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $mediosContacto[] = array(
+                    'valor' => $row[0],
+                    'tipo'=> $row[1]
+                );
+                
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return $mediosContacto;
+            }
+            else {
+                return [];
+            }
+               
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+        }
+    }
+
+    private function setSpanishOracle($stmt)
+    {
+
+        $sql = "alter session set NLS_LANGUAGE = 'SPANISH'";
+        # Execute
+        $stmt = oci_parse($this->conexion->getConexion(),  $sql);
+        oci_execute($stmt);
+
+        $sql = "alter session set NLS_TERRITORY = 'SPAIN'";
+        # Execute
+        $stmt = oci_parse($this->conexion->getConexion(),  $sql);
+        oci_execute($stmt);
+
+        $sql = " alter session set NLS_DATE_FORMAT = 'DD/MM/YYYY HH24:MI'";
+        # Execute
+        $stmt = oci_parse($this->conexion->getConexion(),  $sql);
+        oci_execute($stmt);
+
+    }
+
+    /**
+     * Permite registrar un nuevo paciente
+     */
+    public function crear($codigoInstitucion, $tipoIdentificacion, $identificacion, $primerApellido, $segundoApellido, $primerNombre, $segundoNombre, $fechaNacimiento,  $genero, $clave, $claveAnterior, $calle, $celular, $email)
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stmt = null;
+        $codigoRetorno = null;
+        $mensajeRetorno = null;
+        $numeroHistoriaClinica = null;
+        $codigoPersona = null;
+
+        //Valores por defecto
+        $numero = "";
+        $telefono = "";
+        $estadoCivil = "";   
+        $pais = "313"; //Ecuador
+        $provincia = "17"; //Pichincha
+        $ciudad = "01"; // Quito
+        $distrito = 66; //Belisario quevedo
+        
+
+        try {            
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stmt);
+                                    
+            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_TEL_REGISTRA_PACIENTE(:pn_institucion, :pc_tipo_doc, :pc_id, :pc_primer_apellido, :pc_segundo_apellido, :pc_primer_nombre, :pc_segundo_nombre, :pd_fecha_nac, :pc_estado_civil, :pc_sexo, :pc_clave, :pc_clave_ant, :pc_calle, :pc_numero, :pc_telefono, :pc_celular, :pc_email, :pc_pais, :pc_provincia, :pc_ciudad, :pc_distrito, :pn_hc, :pn_cod_persona, :pn_retorno, :pc_mensaje); END;');
+
+            // Bind the input parameter
+            oci_bind_by_name($stmt,':pn_institucion',$codigoInstitucion,32); 
+            oci_bind_by_name($stmt,':pc_tipo_doc',$tipoIdentificacion,32); 
+            oci_bind_by_name($stmt,':pc_id',$identificacion,32); 
+            oci_bind_by_name($stmt,':pc_primer_apellido',$primerApellido,32);  
+            oci_bind_by_name($stmt,':pc_segundo_apellido',$segundoApellido,32);  
+            oci_bind_by_name($stmt,':pc_primer_nombre',$primerNombre,32);  
+            oci_bind_by_name($stmt,':pc_segundo_nombre',$segundoNombre,32); 
+            oci_bind_by_name($stmt,':pd_fecha_nac',$fechaNacimiento,32);
+            oci_bind_by_name($stmt,':pc_estado_civil',$estadoCivil,32); 
+            oci_bind_by_name($stmt,':pc_sexo',$genero,32); 
+            oci_bind_by_name($stmt,':pc_clave',$clave,32);   
+            oci_bind_by_name($stmt,':pc_clave_ant',$claveAnterior,32);             
+            oci_bind_by_name($stmt,':pc_calle',$calle,60);
+            oci_bind_by_name($stmt,':pc_numero',$numero,32);
+            oci_bind_by_name($stmt,':pc_telefono',$telefono,60); 
+            oci_bind_by_name($stmt,':pc_celular',$celular,60); 
+            oci_bind_by_name($stmt,':pc_email',$email,60);
+            oci_bind_by_name($stmt,':pc_pais',$pais,32); 
+            oci_bind_by_name($stmt,':pc_provincia',$provincia,32); 
+            oci_bind_by_name($stmt,':pc_ciudad',$ciudad,32); 
+            oci_bind_by_name($stmt,':pc_distrito',$distrito,32); 
+ 
+            // Bind the output parameter
+            oci_bind_by_name($stmt,':pn_hc',$numeroHistoriaClinica,32);
+            oci_bind_by_name($stmt,':pn_cod_persona',$codigoPersona,32);
+            oci_bind_by_name($stmt,':pn_retorno',$codigoRetorno,32);
+            oci_bind_by_name($stmt,':pc_mensaje',$mensajeRetorno,500);
+                                   
+            oci_execute($stmt);
+            
+            //Valida el código de retorno del SP
+            if($codigoRetorno == 0){
+                //Cita cancelada exitosamente               
+               /* return array(
+                        'status' => true,
+                        'data'   => [],
+                        'message'   => $mensajeRetorno
+                    );*/
+            } elseif ($codigoRetorno == 1) {
+                //Mensajes de aplicación
+                throw new ModelsException($mensajeRetorno, $codigoRetorno);
+            } else {
+                //Mensajes de errores técnicos
+                throw new Exception($mensajeRetorno, -1);
+            }
+        }        
+        finally {
+            //Libera recursos de conexión
+            if ($stmt != null){
+                oci_free_statement($stmt);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+
+    }
+
+    /**
+     * Permite realizar el pago de una consulta
+     */
+    public function realizarPagoConsulta()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stmt = null;
+        $codigoRetorno = null;
+        $mensajeRetorno = null;
+
+        //Siempre es 1 para el Hospital Metropolitano
+        //$this->codigoInstitucion  = 1;
+
+        try {
+
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada            
+            $this->validarParametrosPagoCita();
+
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stmt);
+             
+            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_REGISTRA_DATOS_WEB(:pc_codigo_espec_medico, :pc_codigo_horario, :pc_fk_arinda_no_arti, :pc_identificacion_paciente, :pc_monto, :pc_numero_turno, :pc_servicio,  :pc_valor_cobertura, :pc_apellidos_factura, :pc_correo_factura, :pc_direccion_factura, :pc_identificacion_factura, :pc_nombres_factura, :pc_tipo_id_factura, :pc_identificacion_titular, :pc_nombre_titular, :pc_numero_autorizacion, :pc_numero_voucher, :pc_tipo_tarjeta_credito, :pc_telefono, :pc_error, :pc_mensaje_error); END;');
+
+
+            // Bind the input parameter
+            oci_bind_by_name($stmt,':pc_codigo_espec_medico',$this->codigoEspecialidadMedico,32);
+            oci_bind_by_name($stmt,':pc_codigo_horario',$this->codigoHorario,32); 
+            //oci_bind_by_name($stmt,':pd_fecha_nacimiento',$this->fechaNacimiento,32); 
+            oci_bind_by_name($stmt,':pc_fk_arinda_no_arti',$this->codigoConsulta,32);       oci_bind_by_name($stmt,':pc_identificacion_paciente',$this->indentificacionPaciente,32);                      
+            oci_bind_by_name($stmt,':pc_monto',$this->valorConsulta,32); 
+            oci_bind_by_name($stmt,':pc_numero_turno',$this->numeroTurno,32); 
+            //oci_bind_by_name($stmt,':pc_primer_apellido',$this->primerApellidoPaciente,80);
+            //oci_bind_by_name($stmt,':pc_primer_nombre',$this->primerNombrePaciente,80); 
+            oci_bind_by_name($stmt,':pc_servicio',$this->codigoLugarAtencion,32); 
+            //oci_bind_by_name($stmt,':pc_sexo',$this->genero,32); 
+            //oci_bind_by_name($stmt,':pc_tipo_id_paciente',$this->tipoIdentificacionPaciente,32); 
+            oci_bind_by_name($stmt,':pc_valor_cobertura',$this->valorCobertura,32); 
+            oci_bind_by_name($stmt,':pc_apellidos_factura',$this->apellidosFactura,120); 
+            oci_bind_by_name($stmt,':pc_correo_factura',$this->correoFactura,120); 
+            oci_bind_by_name($stmt,':pc_direccion_factura',$this->direccionFactura,250); 
+            oci_bind_by_name($stmt,':pc_identificacion_factura',$this->identificacionFactura,32);
+            oci_bind_by_name($stmt,':pc_nombres_factura',$this->nombresFactura,120); 
+            oci_bind_by_name($stmt,':pc_tipo_id_factura',$this->tipoIdentificacionFactura,32); 
+            oci_bind_by_name($stmt,':pc_identificacion_titular',$this->identificacionTitular,32); 
+            oci_bind_by_name($stmt,':pc_nombre_titular',$this->nombreTitular,120); 
+            oci_bind_by_name($stmt,':pc_numero_autorizacion',$this->numeroAutorizacion,32); 
+            oci_bind_by_name($stmt,':pc_numero_voucher',$this->numeroVoucher,32); 
+            oci_bind_by_name($stmt,':pc_tipo_tarjeta_credito',$this->tipoTarjetaCredito,32); 
+            oci_bind_by_name($stmt,':pc_telefono',$this->telefono,32); 
+             
+            // Bind the output parameter
+            oci_bind_by_name($stmt,':pc_error',$codigoRetorno,32);
+            oci_bind_by_name($stmt,':pc_mensaje_error',$mensajeRetorno,500);
+                                   
+            oci_execute($stmt);
+            
+            //Valida el código de retorno del SP
+            if($codigoRetorno == 0){
+                //Cita cancelada exitosamente               
+                return array(
+                        'status' => true,
+                        'data'   => [],
+                        'message'   => $mensajeRetorno
+                    );
+            } elseif ($codigoRetorno == 1) {
+                //Mensajes de aplicación
+                throw new ModelsException($mensajeRetorno, $codigoRetorno);
+            } else {
+                //Mensajes de errores técnicos
+                throw new Exception($mensajeRetorno, -1);
+            }
+                   
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => $ex->getCode()
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stmt != null){
+                oci_free_statement($stmt);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+
+    }
+
+    /**
+     * Valida los parámetros de entrada pago de cita
+     */
+    private function validarParametrosPagoCita(){
+        global $config;
+
+        //Correo de la factura
+        if ($this->correoFactura == null){
+             throw new ModelsException($config['errors']['correoFacturaObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!Helper\Strings::is_email($this->correoFactura)) {
+                    throw new ModelsException($config['errors']['correoFacturaIsEmail']['message'], 1);
+            }
+        }
+
+        //Código del lugar de atención
+        if ($this->codigoLugarAtencion == null){
+             throw new ModelsException($config['errors']['codigoLugarAtencionObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoLugarAtencion)) {
+                    throw new ModelsException($config['errors']['codigoLugarAtencionNumerico']['message'], 1);
+            }
+        }
+
+        //Código de consulta
+        if ($this->codigoConsulta == null){
+             throw new ModelsException($config['errors']['codigoConsultaObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoConsulta)) {
+                    throw new ModelsException($config['errors']['codigoConsultaNumerico']['message'], 1);
+            }
+        }
+
+        //Código de la especialidad del médico
+        if ($this->codigoEspecialidadMedico == null){
+             throw new ModelsException($config['errors']['codigoEspecialidadMedicoObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoEspecialidadMedico)) {
+                    throw new ModelsException($config['errors']['codigoEspecialidadMedicoNumerico']['message'], 1);
+            }
+        }
+
+        //Código de horario
+        if ($this->codigoHorario == null){
+             throw new ModelsException($config['errors']['codigoHorarioObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoHorario)) {
+                    throw new ModelsException($config['errors']['codigoHorarioNumerico']['message'], 1);
+            }
+        }
+
+        //Número de turno
+        if ($this->numeroTurno == null){
+             throw new ModelsException($config['errors']['numeroTurnoObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroTurno)) {
+                    throw new ModelsException($config['errors']['numeroTurnoNumerico']['message'], 1);
+            }
+        }
+        
+    }
+
+    /**
+     * Valida los parámetros de entrada creación del paciente
+     */
+    private function validarParametrosCrear(){
+        global $config;
+
+        //Identificación
+        if ($this->identificacion == null){
+             throw new ModelsException($config['errors']['identificacionObligatorio']['message'], 1);
+        } 
+
+        //Tipo de identificación
+        if ($this->tipoIdentificacion == null){
+             throw new ModelsException($config['errors']['tipoIdentificacionObligatorio']['message'], 1);
+        }
+
+        //Primer apellido
+        if ($this->primerApellido == null){
+             throw new ModelsException($config['errors']['primerApellidoObligatorio']['message'], 1);
+        }
+
+        //Primer nombre
+        if ($this->primerNombre == null){
+             throw new ModelsException($config['errors']['primerNombreObligatorio']['message'], 1);
+        }
+
+        //Fecha de nacimiento
+        if ($this->fechaNacimiento == null){
+             throw new ModelsException($config['errors']['fechaNacimientoObligatorio']['message'], 1);
+        }
+
+        //Estado civil
+        if ($this->estadoCivil == null){
+             throw new ModelsException($config['errors']['estadoCivilObligatorio']['message'], 1);
+        }
+
+        //Genero
+        if ($this->genero == null){
+             throw new ModelsException($config['errors']['generoObligatorio']['message'], 1);
+        }
+
+        //Calle
+        if ($this->calle == null){
+             throw new ModelsException($config['errors']['calleObligatorio']['message'], 1);
+        }
+
+        //Ciudad
+        if ($this->ciudad == null){
+             throw new ModelsException($config['errors']['ciudadObligatorio']['message'], 1);
+        }
+
+        //Celular
+        if ($this->celular == null){
+             throw new ModelsException($config['errors']['celularObligatorio']['message'], 1);
+        }
+
+        //Email
+        if ($this->email== null){
+             throw new ModelsException($config['errors']['emailObligatorio']['message'], 1);
+        }
+
+        //Pais
+        if ($this->pais== null){
+             throw new ModelsException($config['errors']['paisObligatorio']['message'], 1);
+        }
+
+        //Provincia
+        if ($this->provincia== null){
+             throw new ModelsException($config['errors']['provinciaObligatorio']['message'], 1);
+        }
+
+        //Ciudad
+        if ($this->ciudad == null){
+             throw new ModelsException($config['errors']['ciudadObligatorio']['message'], 1);
+        }
+
+        //Distrito
+        if ($this->distrito == null){
+             throw new ModelsException($config['errors']['distritoObligatorio']['message'], 1);
+        }
+        
+    }
 
     private function conectar_Oracle()
     {
@@ -454,5 +1124,8 @@ class Pacientes extends Models implements IModels
     public function __construct(IRouter $router = null)
     {
         parent::__construct($router);
+
+        //Instancia la clase conexión a la base de datos
+        $this->conexion = new Conexion();
     }
 }

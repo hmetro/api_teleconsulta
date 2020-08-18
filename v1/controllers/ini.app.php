@@ -33,7 +33,16 @@ $app->before(function () use ($app) {
         # Verificar si es peticion Auth o Index
         if ($http->getPathInfo() != '/') {
             # Peticion index
-            if (explode('/', $http->getPathInfo())[1] != 'auth'
+            if (//explode('/', $http->getPathInfo())[1] != 'medicos' and                 
+                //explode('/', $http->getPathInfo())[1] != 'historias-clinicas' and
+                //and explode('/', $http->getPathInfo())[1] != 'diagnosticos' and
+                //and explode('/', $http->getPathInfo())[1] != 'citas' and
+                //and explode('/', $http->getPathInfo())[1] != 'pacientes' and 
+                //and explode('/', $http->getPathInfo())[1] != 'facturas' and
+                //and explode('/', $http->getPathInfo())[1] != 'agendas-medico' and
+                explode('/', $http->getPathInfo())[1] != 'login' 
+
+                /*and explode('/', $http->getPathInfo())[1] != 'auth'
                 and explode('/', $http->getPathInfo())[1] != 'verify'
                 and explode('/', $http->getPathInfo())[1] != 'generate'
                 and explode('/', $http->getPathInfo())[1] != 'login'
@@ -45,7 +54,7 @@ $app->before(function () use ($app) {
                 and explode('/', $http->getPathInfo())[1] != 'sintomas'
                 and explode('/', $http->getPathInfo())[1] != 'portafolio'
                 and explode('/', $http->getPathInfo())[1] != 'forms'
-                and explode('/', $http->getPathInfo())[1] != 'sms'
+                and explode('/', $http->getPathInfo())[1] != 'sms'*/                
             ) {
 
                 # Verificar SI EXISTE TOKEN Y SI ES VALIDO
@@ -110,9 +119,9 @@ $app->after(function (Request $request, Response $response) {
         $response->setStatusCode(200);
     }
 
-    $response->headers->set('Access-Control-Allow-Origin', $config['api']['origin']);
-    $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    #$response->headers->set('Access-Control-Allow-Origin', $config['api']['origin']);
+    #$response->headers->set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    #$response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
 });
 
