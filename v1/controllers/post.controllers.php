@@ -301,10 +301,10 @@ $app->post('/agendas-medico/agendas-creadas', function () use ($app) {
  * @return json
  */
 
-$app->post('/login', function () use ($app) {
+/*$app->post('/login', function () use ($app) {
     $auth = new Model\Login;
     return $app->json($auth->login_Api());
-});
+});*/
 
 /**
  * Verify token
