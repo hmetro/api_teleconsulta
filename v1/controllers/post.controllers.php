@@ -132,6 +132,16 @@ $app->post('/historias-clinicas/antecedentes-familiares-admision-anterior', func
 });
 
 /**
+ * Obtiene la url del Reporte MSP002
+ *
+ * @return json
+ */
+$app->post('/historias-clinicas/reporte-002', function () use ($app) {
+    $u = new Model\HistoriaClinica;
+    return $app->json($u->obtenerEnlaceReporteMSP002());
+});
+
+/**
  * Consulta los rangos
  *
  * @return json
@@ -301,10 +311,10 @@ $app->post('/agendas-medico/agendas-creadas', function () use ($app) {
  * @return json
  */
 
-/*$app->post('/login', function () use ($app) {
+$app->post('/login', function () use ($app) {
     $auth = new Model\Login;
     return $app->json($auth->login_Api());
-});*/
+});
 
 /**
  * Verify token
