@@ -111,6 +111,33 @@ class HistoriaClinica extends Models implements IModels
     }    
 
     /**
+     * Valida los parámetros de entrada del enlace al reporte MSP002
+     */
+    private function validarParametrosEnlaceReporteMSP002(){
+        global $config;
+
+        //Número de historia clínica
+        if ($this->numeroHistoriaClinica == null){
+             throw new ModelsException($config['errors']['numeroHistoriaClinicaObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroHistoriaClinica)) {
+                    throw new ModelsException($config['errors']['numeroHistoriaClinicaNumerico']['message'], 1);
+            }
+        }
+        
+        //Número de admisión
+        if ($this->numeroAdmision == null){
+             throw new ModelsException($config['errors']['numeroAdmisionObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroAdmision)) {
+                    throw new ModelsException($config['errors']['numeroAdmisionNumerico']['message'], 1);
+            }
+        }
+    }  
+
+    /**
      * Valida los parámetros de entrada para crear una Historia Clínica
      */
     private function validarParametrosCrear($historiaClinica){
@@ -949,6 +976,82 @@ class HistoriaClinica extends Models implements IModels
         }
     }
 
+    /**
+     * Obtiene el enlace al reporte MSP 002 de la historia clínica del paciente
+    */
+    public function obtenerEnlaceReporteMSP002()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;        
+        $url = null;
+        $datosURL = null;
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada   
+            $this->validarParametrosEnlaceReporteMSP002();
+            
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN 
+                PKG_REPORTES.preportehistoriaclinica(:pn_institucion, :pn_paciente, :pn_admision, :url); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid, ":pn_institucion", $this->codigoInstitucion, 32);
+            oci_bind_by_name($stid, ":pn_paciente", $this->numeroHistoriaClinica, 32);
+            oci_bind_by_name($stid, ":pn_admision", $this->numeroAdmision, 32);
+
+            // Bind the output argument 
+            oci_bind_by_name($stid, ":url", $url, 1000);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Resultados de la consulta
+            $datosURL = array();
+
+            return array(
+                    'status' => true,                    
+                    'data'   => $datosURL = array('enlace' => $url)
+                        );
+            
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
 
     /**
      * Obtiene los datos de la revisión de órganos

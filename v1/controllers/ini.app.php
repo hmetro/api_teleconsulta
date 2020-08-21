@@ -33,14 +33,14 @@ $app->before(function () use ($app) {
         # Verificar si es peticion Auth o Index
         if ($http->getPathInfo() != '/') {
             # Peticion index
-            //if (//explode('/', $http->getPathInfo())[1] != 'medicos' and                 
+            if (//explode('/', $http->getPathInfo())[1] != 'medicos' and                 
                 //explode('/', $http->getPathInfo())[1] != 'historias-clinicas' and
                 //and explode('/', $http->getPathInfo())[1] != 'diagnosticos' and
                 //and explode('/', $http->getPathInfo())[1] != 'citas' and
                 //and explode('/', $http->getPathInfo())[1] != 'pacientes' and 
                 //and explode('/', $http->getPathInfo())[1] != 'facturas' and
                 //and explode('/', $http->getPathInfo())[1] != 'agendas-medico' and
-                //explode('/', $http->getPathInfo())[1] != 'login' 
+                explode('/', $http->getPathInfo())[1] != 'login' 
 
                 /*and explode('/', $http->getPathInfo())[1] != 'auth'
                 and explode('/', $http->getPathInfo())[1] != 'verify'
@@ -55,7 +55,7 @@ $app->before(function () use ($app) {
                 and explode('/', $http->getPathInfo())[1] != 'portafolio'
                 and explode('/', $http->getPathInfo())[1] != 'forms'
                 and explode('/', $http->getPathInfo())[1] != 'sms'*/                
-            //) {
+            ) {
 
                 # Verificar SI EXISTE TOKEN Y SI ES VALIDO
                 $u     = new Model\Auth;
@@ -64,7 +64,7 @@ $app->before(function () use ($app) {
                     throw new ModelsException($error['message'], $error['errorCode']);
                 }
 
-            //}
+            }
 
         }
 
