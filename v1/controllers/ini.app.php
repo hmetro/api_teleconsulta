@@ -41,7 +41,7 @@ $app->before(function () use ($app) {
                 //and explode('/', $http->getPathInfo())[1] != 'facturas' and
                 //and explode('/', $http->getPathInfo())[1] != 'agendas-medico' and
                 explode('/', $http->getPathInfo())[1] != 'login' 
-
+                and explode('/', $http->getPathInfo())[1] != 'register'
                 /*and explode('/', $http->getPathInfo())[1] != 'auth'
                 and explode('/', $http->getPathInfo())[1] != 'verify'
                 and explode('/', $http->getPathInfo())[1] != 'generate'

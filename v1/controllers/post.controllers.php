@@ -247,7 +247,7 @@ $app->post('/pacientes/datos', function () use ($app) {
  * @return json
  */
 
-$app->post('/pacientes/registrar', function () use ($app) {
+$app->post('/register', function () use ($app) {
     $auth = new Model\Register;
     return $app->json($auth->registrarPacienteTeleconsulta());
 });
