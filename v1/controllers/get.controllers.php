@@ -43,10 +43,21 @@ $app->get('/', function () use ($app) {
  * @return json
  */
 
-/*$app->get('/account', function () use ($app) {
+$app->get('/account', function () use ($app) {
     $u = new Model\Account;
     return $app->json($u->getAccount());
-});*/
+});
+
+/**
+ * Obtiene los datos del paciente
+ *
+ * @return json
+ */
+
+$app->get('/pacientes/datos', function () use ($app) {
+    $u = new Model\Pacientes;
+    return $app->json($u->obtenerDatosPaciente2());
+});
 
 /**
  * DOCUMENTO PDF AND XML FACTURA del Paciente -> Usuario

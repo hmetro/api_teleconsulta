@@ -42,6 +42,8 @@ class Citas extends Models implements IModels
     private $USER        = null;
     private $numeroMes;
     private $codigoMedico;
+    private $numeroHistoriaClinica;
+    private $numeroAdmision;
 
     /**
      * Asigna los parámetros de entrada
@@ -102,6 +104,33 @@ class Citas extends Models implements IModels
             }
         }
         
+    }
+
+    /**
+     * Valida los parámetros de entrada de la consulta del motivo de la cita
+     */
+    private function validarParametrosConsultarMotivoCita(){
+        global $config;
+
+        //Número de historia clínica
+        if ($this->numeroHistoriaClinica == null){
+             throw new ModelsException($config['errors']['numeroHistoriaClinicaObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroHistoriaClinica)) {
+                    throw new ModelsException($config['errors']['numeroHistoriaClinicaNumerico']['message'], 1);
+            }
+        }
+        
+        //Número de admisión
+        if ($this->numeroAdmision == null){
+             throw new ModelsException($config['errors']['numeroAdmisionObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroAdmision)) {
+                    throw new ModelsException($config['errors']['numeroAdmisionNumerico']['message'], 1);
+            }
+        }        
     }
 
     /**
@@ -326,11 +355,103 @@ class Citas extends Models implements IModels
                         'descripcionOrganigrama' => $row['DESC_ORGANIGRAMA'],
                         'direccionOrganigrama' => $row['DIRECCION'],
                         'codigoConsulta' => $row['COD_CONSULTA'],
-                        'valorConsulta' => $row['VALOR_CONSULTA']
+                        'valorConsulta' => $row['VALOR_CONSULTA'],
+                        'codigoLugarAtencion' => $row['CODIGO_LUGAR_ATENCION']
                         )
                 );
 
                 //print("Parámetro: " . $row['PARAMETRO']);
+            }
+
+            //Verificar si la consulta devolvió datos
+            if (!$existeDatos) {
+
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+
+            }
+
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
+
+    /**
+     * Consulta el motivo de la cita médica.
+     */
+    public function consultarMotivoCita()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false; 
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada            
+            $this->validarParametrosConsultarMotivoCita();
+
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_CEA_NOTA_PTE_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+           
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid, ":pn_hc", $this->numeroHistoriaClinica, 32);
+            oci_bind_by_name($stid, ":pn_adm", $this->numeroAdmision, 32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                return array(
+                    'status' => true,
+                    'data'   => array(
+                        'motivoCita' => $row[0] == null ? "" : $row[0]
+                        )
+                );
             }
 
             //Verificar si la consulta devolvió datos
@@ -524,7 +645,7 @@ class Citas extends Models implements IModels
             $this->obtenerAutorizacion();
 
             $codigoPersona = $this->USER->COD_PERSONA;
-
+            
             //Validar parámetros de entrada                     
             //Código persona
             if ($codigoPersona == null){

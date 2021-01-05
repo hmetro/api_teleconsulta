@@ -70,7 +70,6 @@ class Pacientes extends Models implements IModels
     private $ciudad;
     private $distrito;
 
-
     #Datos de Factura
     private $apellidosFactura;
     private $correoFactura;
@@ -87,26 +86,43 @@ class Pacientes extends Models implements IModels
     private $tipoTarjetaCredito;
     private $telefono;
 
+    #Tipo de la cita
+    private $tipoCita;    
+
     # Variables de clase    
     private $conexion;
 
+/**
+     * Obtiene el token
+     */
+    private function obtenerAutorizacion()
+    {
+        try {
+            global $http;
+
+            $token = $http->headers->get("Authorization");
+
+            $auth = new Model\Auth;
+            $key  = $auth->GetData($token);
+
+            $this->USER = $key;
+
+        } catch (ModelsException $e) {
+            throw $e;
+        }
+    }
+
     /**
-     * Obtiene los datos del paciente
+     * Obtiene los datos del paciente con parámetro codigoPersona
     */
-    public function obtenerDatosPaciente()
+    public function obtenerDatosPaciente1()
     {
         global $config;
-
-        //Inicialización de variables
-        $stid = null;
-        $pc_datos = null;
-        $existeDatos = false;
-        $datosPaciente[] = null;
-
+       
         try {         
             //Asignar parámetros de entrada            
             $this->setParameters();
-
+           
             //Validar parámetros de entrada            
             //Código de la persona
             if ($this->codigoPersona == null){
@@ -118,60 +134,8 @@ class Pacientes extends Models implements IModels
                 }
             }
 
-            //Conectar a la BDD
-            $this->conexion->conectar();
-
-            //Setear idioma y formatos en español para Oracle
-            $this->setSpanishOracle($stid);
-
-            $pc_datos = oci_new_cursor($this->conexion->getConexion());
-
-            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DATOS_PACIENTE(:pn_cod_persona, :pc_datos); END;");
-
-            // Bind the input num_entries argument to the $max_entries PHP variable             
-            oci_bind_by_name($stid,":pn_cod_persona",$this->codigoPersona,32);
-            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
-           
-            //Ejecuta el SP
-            oci_execute($stid);
-
-            //Ejecutar el REF CURSOR como un ide de sentencia normal
-            oci_execute($pc_datos);  
-
-            //Resultados de la consulta
-            $datosPaciente = array();
-
-            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
-                $existeDatos = true;
-
-                # RESULTADO OBJETO
-                $datosPaciente[] = array(
-                    'primerApellido' => $row[0],
-                    'segundoApellido' => $row[1],
-                    'primerNombre' => $row[2],
-                    'segundoNombre' => $row[3],
-                    'genero' => $row[4],
-                    'estadoCivil' => $row[5],
-                    'fechaNacimiento' => $row[6],
-                    'cedula' => $row[7],
-                    'pasaporte' => $row[8],
-                    'ruc' => $row[9],
-                    'direcciones' => $this->obtenerDirecciones($this->codigoPersona, $stid),
-                    'mediosContacto' => $this->obtenerMediosContacto($this->codigoPersona, $stid)
-                );               
-            }
-
-            //Verificar si la consulta devolvió datos
-            if ($existeDatos) {
-                return array(
-                    'status' => true,                    
-                    'data'   => $datosPaciente
-                        );
-            }
-            else {
-                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
-            }
-
+            return $this->obtenerDatosPaciente($this->codigoPersona);
+            
         } catch (ModelsException $e) {
 
             return array(
@@ -190,6 +154,132 @@ class Pacientes extends Models implements IModels
                     'errorCode' => -1
                 );
 
+        }        
+    }
+
+    /**
+     * Obtiene los datos del paciente tomando el codigoPersona desde el Token
+    */
+    public function obtenerDatosPaciente2()
+    {
+        global $config;
+        $codigoPersona = null;
+       
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Obtiene la autorización 
+            $this->obtenerAutorizacion();
+
+            $codigoPersona = $this->USER->COD_PERSONA;
+           
+            //Validar parámetros de entrada            
+            //Código de la persona
+            if ($codigoPersona == null){
+                 throw new ModelsException($config['errors']['codigoPersonaObligatorio']['message'], 1);
+            } else {
+                //Validaciones de tipo de datos y rangos permitidos
+                if (!is_numeric($codigoPersona)) {
+                        throw new ModelsException($config['errors']['codigoPersonaNumerico']['message'], 1);
+                }
+            }
+
+            return $this->obtenerDatosPaciente($codigoPersona);
+            
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }        
+    }
+
+    /**
+     * Obtiene los datos del paciente
+    */
+    public function obtenerDatosPaciente($codigoPersona)
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false;
+        $datosPaciente[] = null;        
+
+        try {                     
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DATOS_PACIENTE(:pn_cod_persona, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_cod_persona",$codigoPersona,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $datosPaciente = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $datosPaciente[] = array(
+                    'primerApellido' => $row[0] == null ? '' : $row[0],
+                    'segundoApellido' => $row[1] == null ? '' : $row[1],
+                    'primerNombre' => $row[2] == null ? '' : $row[2],
+                    'segundoNombre' => $row[3] == null ? '' : $row[3],
+                    'genero' => $row[4] == null ? '' : $row[4],
+                    'estadoCivil' => $row[5] == null ? '' : $row[5],
+                    'fechaNacimiento' => $row[6] == null ? '' : $row[6],
+                    'cedula' => $row[7] == null ? '' : $row[7],
+                    'pasaporte' => $row[8] == null ? '' : $row[8],
+                    'ruc' => $row[9] == null ? '' : $row[9],
+                    'direcciones' => $this->obtenerDirecciones($codigoPersona, $stid),
+                    'mediosContacto' => $this->obtenerMediosContacto($codigoPersona, $stid)
+                );               
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return array(
+                    'status' => true,                    
+                    'data'   => $datosPaciente
+                        );
+            }
+            else {
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+            }
+
+        } catch (ModelsException $e) {
+            throw $e;        
+        } catch (Exception $ex) {
+            throw $ex;
         }
         finally {
             //Libera recursos de conexión
@@ -241,15 +331,15 @@ class Pacientes extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $direcciones[] = array(
-                    'codigoDireccion' => $row[0],
-                    'tipoDireccion'=> $row[1],
-                    'calle' => $row[2],
-                    'numero' => $row[3],
-                    'interseccion' => $row[4],
-                    'referencia' => $row[5],
-                    'pais' => $row[6],
-                    'provincia' => $row[7],
-                    'canton' => $row[8]
+                    'codigoDireccion' => $row[0] == null ? '' : $row[0],
+                    'tipoDireccion'=> $row[1] == null ? '' : $row[1],
+                    'calle' => $row[2] == null ? '' : $row[2],
+                    'numero' => $row[3] == null ? '' : $row[3],
+                    'interseccion' => $row[4] == null ? '' : $row[4],
+                    'referencia' => $row[5] == null ? '' : $row[5],
+                    'pais' => $row[6] == null ? '' : $row[6],
+                    'provincia' => $row[7] == null ? '' : $row[7],
+                    'canton' => $row[8] == null ? '' : $row[8]
                 );
                 
             }
@@ -308,8 +398,8 @@ class Pacientes extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $mediosContacto[] = array(
-                    'valor' => $row[0],
-                    'tipo'=> $row[1]
+                    'valor' => $row[0] == null ? '' : $row[0],
+                    'tipo'=> $row[1] == null ? '' : $row[1]
                 );
                 
             }
@@ -396,8 +486,8 @@ class Pacientes extends Models implements IModels
             oci_bind_by_name($stmt,':pd_fecha_nac',$fechaNacimiento,32);
             oci_bind_by_name($stmt,':pc_estado_civil',$estadoCivil,32); 
             oci_bind_by_name($stmt,':pc_sexo',$genero,32); 
-            oci_bind_by_name($stmt,':pc_clave',$clave,32);   
-            oci_bind_by_name($stmt,':pc_clave_ant',$claveAnterior,32);             
+            oci_bind_by_name($stmt,':pc_clave',$clave,100);   
+            oci_bind_by_name($stmt,':pc_clave_ant',$claveAnterior,100);             
             oci_bind_by_name($stmt,':pc_calle',$calle,60);
             oci_bind_by_name($stmt,':pc_numero',$numero,32);
             oci_bind_by_name($stmt,':pc_telefono',$telefono,60); 
@@ -473,14 +563,15 @@ class Pacientes extends Models implements IModels
             //Setear idioma y formatos en español para Oracle
             $this->setSpanishOracle($stmt);
              
-            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_REGISTRA_DATOS_WEB(:pc_codigo_espec_medico, :pc_codigo_horario, :pc_fk_arinda_no_arti, :pc_identificacion_paciente, :pc_monto, :pc_numero_turno, :pc_servicio,  :pc_valor_cobertura, :pc_apellidos_factura, :pc_correo_factura, :pc_direccion_factura, :pc_identificacion_factura, :pc_nombres_factura, :pc_tipo_id_factura, :pc_identificacion_titular, :pc_nombre_titular, :pc_numero_autorizacion, :pc_numero_voucher, :pc_tipo_tarjeta_credito, :pc_telefono, :pc_error, :pc_mensaje_error); END;');
+            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_REGISTRA_DATOS_WEB(:pc_codigo_espec_medico, :pc_codigo_horario, :pc_fk_arinda_no_arti, :pc_identificacion_paciente, :pc_monto, :pc_numero_turno, :pc_servicio,  :pc_valor_cobertura, :pc_apellidos_factura, :pc_correo_factura, :pc_direccion_factura, :pc_identificacion_factura, :pc_nombres_factura, :pc_tipo_id_factura, :pc_identificacion_titular, :pc_nombre_titular, :pc_numero_autorizacion, :pc_numero_voucher, :pc_tipo_tarjeta_credito, :pc_telefono, :pc_tipo_cita, :pc_error, :pc_mensaje_error); END;');
 
 
             // Bind the input parameter
             oci_bind_by_name($stmt,':pc_codigo_espec_medico',$this->codigoEspecialidadMedico,32);
             oci_bind_by_name($stmt,':pc_codigo_horario',$this->codigoHorario,32); 
             //oci_bind_by_name($stmt,':pd_fecha_nacimiento',$this->fechaNacimiento,32); 
-            oci_bind_by_name($stmt,':pc_fk_arinda_no_arti',$this->codigoConsulta,32);       oci_bind_by_name($stmt,':pc_identificacion_paciente',$this->indentificacionPaciente,32);                      
+            oci_bind_by_name($stmt,':pc_fk_arinda_no_arti',$this->codigoConsulta,32);
+            oci_bind_by_name($stmt,':pc_identificacion_paciente',$this->indentificacionPaciente,32);                      
             oci_bind_by_name($stmt,':pc_monto',$this->valorConsulta,32); 
             oci_bind_by_name($stmt,':pc_numero_turno',$this->numeroTurno,32); 
             //oci_bind_by_name($stmt,':pc_primer_apellido',$this->primerApellidoPaciente,80);
@@ -501,6 +592,7 @@ class Pacientes extends Models implements IModels
             oci_bind_by_name($stmt,':pc_numero_voucher',$this->numeroVoucher,32); 
             oci_bind_by_name($stmt,':pc_tipo_tarjeta_credito',$this->tipoTarjetaCredito,32); 
             oci_bind_by_name($stmt,':pc_telefono',$this->telefono,32); 
+            oci_bind_by_name($stmt,':pc_tipo_cita',$this->tipoCita,1); 
              
             // Bind the output parameter
             oci_bind_by_name($stmt,':pc_error',$codigoRetorno,32);
@@ -618,6 +710,18 @@ class Pacientes extends Models implements IModels
             //Validaciones de tipo de datos y rangos permitidos
             if (!is_numeric($this->numeroTurno)) {
                     throw new ModelsException($config['errors']['numeroTurnoNumerico']['message'], 1);
+            }
+        }
+
+        //Tipo de consulta        
+         if ($this->tipoCita == null){
+             throw new ModelsException($config['errors']['tipoCitaObligatorio']['message'], 1);
+        } 
+        else {
+            //Validaciones de tipo de datos y rangos permitidos
+            //S = Subsecuente / P = Primera vez
+            if (!Helper\Strings::contain($this->tipoCita, 'SP')) {
+                    throw new ModelsException($config['errors']['tipoCitaNoPermitido']['message'], 1);
             }
         }
         
@@ -783,7 +887,7 @@ class Pacientes extends Models implements IModels
             global $http;
 
             foreach ($http->request->all() as $key => $value) {
-                $this->$key = $value;
+                $this->$key = strtoupper($value);
             }
 
             return false;

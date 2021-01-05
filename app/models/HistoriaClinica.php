@@ -23,6 +23,7 @@ use Ocrend\Kernel\Router\IRouter;
 use Symfony\Component\Translation\Loader\ArrayLoader;
 use Symfony\Component\Translation\Translator;
 use Exception;
+use app\models\Pedidos;
 
 /**
  * Modelo Odbc GEMA -> Historia clínica
@@ -46,6 +47,14 @@ class HistoriaClinica extends Models implements IModels
     private $numeroHistoriaClinica;
     private $numeroAdmision;
     private $codigoInstitucion = 1;
+    private $numeroCompania = '01';
+    private $recomendacionesNoFarmacologicas;
+    private $tamanioCodigoExamen = 9;
+    private $tamanioDescripcionExamen = 120;
+    private $pedidosLaboratorio;
+    private $pedidosImagen;
+    private $start  = 0;
+    private $length  = 10;
     
     /**
      * Asigna los parámetros de entrada
@@ -81,6 +90,9 @@ class HistoriaClinica extends Models implements IModels
         $this->diagnosticos = $this->historiaClinica['diagnosticos'];
         $this->evoluciones = $this->historiaClinica['evoluciones'];
         $this->prescripciones = $this->historiaClinica['prescripciones'];
+        $this->recomendacionesNoFarmacologicas  = $this->historiaClinica['recomendacionesNoFarmacologicas'];
+        $this->pedidosLaboratorio = $this->historiaClinica['pedidosLaboratorio'];
+        $this->pedidosImagen = $this->historiaClinica['pedidosImagen'];
     }
 
     /**
@@ -173,7 +185,7 @@ class HistoriaClinica extends Models implements IModels
              throw new ModelsException($config['errors']['seccionMotivoConsultaObligatorio']['message'], 1);
         } else {
             //Motivo de consulta
-            if ($historiaClinica['motivoConsulta']['motivoConsulta'] == null and $historiaClinica['motivoConsulta']['antecedentesPersonales'] == null and $historiaClinica['motivoConsulta']['enfermedadActual'] == null){
+            if ($historiaClinica['motivoConsulta']['motivoConsulta'] == null and $historiaClinica['motivoConsulta']['antecedentesPersonales'] == null and $historiaClinica['motivoConsulta']['enfermedadActual'] == null and $historiaClinica['motivoConsulta']['alergias'] == null){
                 throw new ModelsException($config['errors']['camposMotivoConsultaObligatorio']['message'], 1);
             }
         }
@@ -190,8 +202,8 @@ class HistoriaClinica extends Models implements IModels
             }
         }
 
-        //Sección antecedentes familiares (opcional)
-        if (!array_key_exists('antecedentesFamiliares', $historiaClinica)){
+        //Sección antecedentes familiares (se cambia a obligatorio, 28-dic-2020)
+        /*if (!array_key_exists('antecedentesFamiliares', $historiaClinica)){
             throw new ModelsException($config['errors']['seccionAntecedentesFamiliaresObligatorio']['message'], 1);
         } else {
             if (count($historiaClinica['antecedentesFamiliares']) > 0) { 
@@ -199,6 +211,40 @@ class HistoriaClinica extends Models implements IModels
                  throw new ModelsException($config['errors']['camposAntecedentesFamiliaresObligatorio']['message'], 1);
                 }
             }
+        }*/
+        if (empty($historiaClinica['antecedentesFamiliares'])){
+            throw new ModelsException($config['errors']['seccionAntecedentesFamiliaresObligatorio']['message'], 1);
+        } else {
+            if (!array_key_exists('cardiopatia', $historiaClinica['antecedentesFamiliares'])) {                
+                throw new ModelsException($config['errors']['campoCardiopatiaNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('diabetes', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoDiabetesNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('enfermedadVascular', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoEnfermedadVascularNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('hipertension', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoHipertensionNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('cancer', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoCancerNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('tuberculosis', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoTuberculosisNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('enfermendadMental', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoEnfermendadMentalNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('enfermedadInfecciosa', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoEnfermedadInfecciosaNoExiste']['message'], 1);
+            }
+            else if (!array_key_exists('malformacion', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoMalformacionNoExiste']['message'], 1);
+            }
+             else if (!array_key_exists('otro', $historiaClinica['antecedentesFamiliares'])) {
+                throw new ModelsException($config['errors']['campoOtroNoExiste']['message'], 1);
+            }                    
         }
 
         //Sección signos vitales (Opcional)
@@ -287,6 +333,9 @@ class HistoriaClinica extends Models implements IModels
         if (empty($historiaClinica['diagnosticos'])){
              throw new ModelsException($config['errors']['seccionDiagnosticosObligatorio']['message'], 1);
         } else {
+            
+            $masDeUnPrincipal = 0;
+
             foreach ($historiaClinica['diagnosticos'] as $diagnostico) {
                 //Código
                 if ($diagnostico['codigo'] == null){
@@ -294,14 +343,25 @@ class HistoriaClinica extends Models implements IModels
                 }
 
                 //Clasificacion
-                if ($diagnostico['clasificacionDiagnostico'] == null){
+                /*if ($diagnostico['clasificacionDiagnostico'] == null){
                         throw new ModelsException($config['errors']['clasificacionDiagnosticoObligatorio']['message'], 1);
-                }
+                }*/
 
                 //Principal
                 if ($diagnostico['principal'] == null){
                         throw new ModelsException($config['errors']['principalDiagnosticoObligatorio']['message'], 1);
                 }
+                else {
+                    if ($diagnostico['principal'] == 'S') {
+                       $masDeUnPrincipal += 1;
+                    }
+                
+                    //Valida que no exista más de un principal
+                    if ($masDeUnPrincipal > 1) {
+                        throw new ModelsException($config['errors']['principalDiagnosticoMasDeUno']['message'], 1);
+                    }
+                }
+
                 //Grupo
                 if ($diagnostico['grupo'] == null){
                         throw new ModelsException($config['errors']['grupoDiagnosticoObligatorio']['message'], 1);
@@ -321,18 +381,151 @@ class HistoriaClinica extends Models implements IModels
             }
         }
 
-        //Sección prescripciones
+        //Sección prescripciones (opcional)
         if (!array_key_exists('prescripciones', $historiaClinica)){
              throw new ModelsException($config['errors']['seccionPrescripcionesObligatorio']['message'], 1);
         } else {
             foreach ($historiaClinica['prescripciones'] as $prescripcion) {
-                //Descripción evolución
-                if ($prescripcion['descripcion'] == null){
-                     throw new ModelsException($config['errors']['descripcionPrescripcionObligatorio']['message'], 1);
+                //Descripción prescripción
+                if ($prescripcion['medicamento'] == null){
+                     throw new ModelsException($config['errors']['medicamentoPrescripcionObligatorio']['message'], 1);
+                } 
+
+                //Cantidad comprar
+                if ($prescripcion['cantidadComprar'] == null){
+                     throw new ModelsException($config['errors']['cantidadComprarPrescripcionObligatorio']['message'], 1);
+                } else {
+                    //Valida que sea numérico el ingreso de datos
+                    /*if (!is_numeric($prescripcion['cantidadComprar'])) {
+                        throw new ModelsException($config['errors']['cantidadComprarPrescripcionNumerico']['message'], 1);
+                    }*/
+                }
+
+                //Unidad comprar
+                if ($prescripcion['unidadComprar'] == null){
+                     throw new ModelsException($config['errors']['unidadComprarPrescripcionObligatorio']['message'], 1);
+                } 
+
+                //Cantidad tomar
+                if ($prescripcion['cantidadTomar'] == null){
+                     throw new ModelsException($config['errors']['cantidadTomarPrescripcionObligatorio']['message'], 1);
+                } else {
+                    //Valida que sea numérico el ingreso de datos
+                    /*if (!is_numeric($prescripcion['cantidadTomar'])) {
+                        throw new ModelsException($config['errors']['cantidadTomarPrescripcionNumerico']['message'], 1);
+                    }*/
+                }
+
+                //Unidad tomar
+                if ($prescripcion['unidadTomar'] == null){
+                     throw new ModelsException($config['errors']['unidadTomarPrescripcionObligatorio']['message'], 1);
+                } 
+
+                //Frecuencia dosis
+                if ($prescripcion['frecuenciaDosis'] == null){
+                     throw new ModelsException($config['errors']['frecuenciaDosisPrescripcionObligatorio']['message'], 1);
+                } else {
+                    if (!is_numeric($prescripcion['frecuenciaDosis'])) {
+                        throw new ModelsException($config['errors']['frecuenciaDosisPrescripcionNumerico']['message'], 1);
+                    }
+                }
+
+                //Frecuencia total
+                if ($prescripcion['frecuenciaTotal'] != null){                     
+                    if (!is_numeric($prescripcion['frecuenciaTotal'])) {
+                        throw new ModelsException($config['errors']['frecuenciaTotalPrescripcionNumerico']['message'], 1);
+                    }
+                }
+
+                //Unidad dosis
+                if ($prescripcion['unidadDosis'] == null){
+                     throw new ModelsException($config['errors']['unidadDosisPrescripcionObligatorio']['message'], 1);
+                } 
+
+                //Vía administración
+                if ($prescripcion['viaAdministracion'] == null){
+                     throw new ModelsException($config['errors']['viaAdministracionPrescripcionObligatorio']['message'], 1);
                 } 
             }
         }
 
+        //Sección recomendaciones no farmacologicas (opcional)
+        if (!array_key_exists('recomendacionesNoFarmacologicas', $historiaClinica)){
+             throw new ModelsException($config['errors']['seccionRecomendacionesNoFarmacologicasObligatorio']['message'], 1);
+        } else {
+
+            if (count($historiaClinica['recomendacionesNoFarmacologicas']) > 0) { 
+                if ($historiaClinica['recomendacionesNoFarmacologicas']['descripcion'] == null){
+                        throw new ModelsException($config['errors']['descripcionRecomendacionNoFarmacologicaObligatorio']['message'], 1);
+                }
+            }            
+        }
+
+        //Sección pedidos laboratorio (opcional)
+        if (!array_key_exists('pedidosLaboratorio', $historiaClinica)){
+             throw new ModelsException($config['errors']['seccionPedidosLaboratorioObligatorio']['message'], 1);
+        } else {
+            foreach ($historiaClinica['pedidosLaboratorio'] as $pedidoLaboratorio) {
+                //Código
+                if ($pedidoLaboratorio['codigoExamen'] == null){
+                        throw new ModelsException($config['errors']['codigoExamenObligatorio']['message'], 1);
+                } else {
+                    //Validaciones de tipo de datos y rangos permitidos
+                    if (strlen($pedidoLaboratorio['codigoExamen']) > $this->tamanioCodigoExamen) {
+                            throw new ModelsException($config['errors']['codigoExamenTamanio']['message'], 1);
+                    }
+                }
+
+                //Descripción
+                if ($pedidoLaboratorio['descripcionExamen'] == null){
+                        throw new ModelsException($config['errors']['descripcionExamenObligatorio']['message'], 1);
+                }  else {
+                    //Validaciones de tipo de datos y rangos permitidos
+                    if (strlen($pedidoLaboratorio['descripcionExamen']) > $this->tamanioDescripcionExamen) {
+                            throw new ModelsException($config['errors']['descripcionExamenTamanio']['message'], 1);
+                    }
+                }
+
+                //Precio venta al público
+                if ($pedidoLaboratorio['precioVentaPublico'] == null){
+                        throw new ModelsException($config['errors']['precioVentaPublicoObligatorio']['message'], 1);
+                }
+
+            }
+        }
+
+        //Sección pedidos imagen (opcional)
+        if (!array_key_exists('pedidosImagen', $historiaClinica)){
+             throw new ModelsException($config['errors']['seccionPedidosImagenObligatorio']['message'], 1);
+        } else {
+            foreach ($historiaClinica['pedidosImagen'] as $pedidoImagen) {
+                //Código
+                if ($pedidoImagen['codigoExamen'] == null){
+                        throw new ModelsException($config['errors']['codigoExamenObligatorio']['message'], 1);
+                } else {
+                    //Validaciones de tipo de datos y rangos permitidos
+                    if (strlen($pedidoImagen['codigoExamen']) > $this->tamanioCodigoExamen) {
+                            throw new ModelsException($config['errors']['codigoExamenTamanio']['message'], 1);
+                    }
+                }
+
+                //Descripción
+                if ($pedidoImagen['descripcionExamen'] == null){
+                        throw new ModelsException($config['errors']['descripcionExamenObligatorio']['message'], 1);
+                }  else {
+                    //Validaciones de tipo de datos y rangos permitidos
+                    if (strlen($pedidoImagen['descripcionExamen']) > $this->tamanioDescripcionExamen) {
+                            throw new ModelsException($config['errors']['descripcionExamenTamanio']['message'], 1);
+                    }
+                }
+
+                //Precio venta al público
+                if ($pedidoImagen['precioVentaPublico'] == null){
+                        throw new ModelsException($config['errors']['precioVentaPublicoObligatorio']['message'], 1);
+                }
+
+            }
+        }
     }    
 
     private function setSpanishOracle($stid)
@@ -372,7 +565,7 @@ class HistoriaClinica extends Models implements IModels
         $codigoError = -1;
         $mensajeError;            
 
-        try {
+        try {            
             //Asigna y valida los parámetro de entrada
             $this->setParametersCrear();            
             
@@ -381,18 +574,19 @@ class HistoriaClinica extends Models implements IModels
 
             //Setear idioma y formatos en español para Oracle
             $this->setSpanishOracle($stmt);
-                    
-            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_TEL_CEA_HC_INS(:pn_hc, :pn_adm, :pn_institucion, :pc_motivo_consulta_1, :pc_antecedentes_personales, :pc_enfermedad_actual, :pc_or_sentidos, :pc_or_cardio_vascular, :pc_or_genital, :pc_or_musc_esqueletico, :pc_or_hemo_linfatico, :pc_or_respiratorio, :pc_or_digestivo, :pc_or_urinario, :pc_or_endocrino, :pc_or_nervioso, :pc_cardiopatia, :pc_diabetes, :pc_enf_vascular, :pc_hipertension, :pc_cancer, :pc_tuberculosis, :pc_enf_mental, :pc_enf_infecciosa, :pc_malformacion, :pc_otro, :pc_cabeza_1r, :pc_cuello_2r, :pc_torax_3r, :pc_abdomen_4r, :pc_pelvis_5r, :pc_extremidades_6r, :pc_plan_tratamiento, :pc_descripcion_evol, :pn_retorno, :pc_mensaje); END;');
+
+            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_TEL_CEA_HC_INS(:pn_hc, :pn_adm, :pn_institucion, :pc_motivo_consulta_1, :pc_antecedentes_personales, :pc_enfermedad_actual, :pc_or_sentidos, :pc_or_cardio_vascular, :pc_or_genital, :pc_or_musc_esqueletico, :pc_or_hemo_linfatico, :pc_or_respiratorio, :pc_or_digestivo, :pc_or_urinario, :pc_or_endocrino, :pc_or_nervioso, :pc_alergias, :pc_cardiopatia, :pc_diabetes, :pc_enf_vascular, :pc_hipertension, :pc_cancer, :pc_tuberculosis, :pc_enf_mental, :pc_enf_infecciosa, :pc_malformacion, :pc_otro, :pc_cabeza_1r, :pc_cuello_2r, :pc_torax_3r, :pc_abdomen_4r, :pc_pelvis_5r, :pc_extremidades_6r, :pc_plan_tratamiento, :pc_descripcion_evol, :pn_retorno, :pc_mensaje); END;');
 
             // Bind the input parameter
             oci_bind_by_name($stmt,':pn_hc',$this->historiaClinica['numeroHistoriaClinica'],32); 
             oci_bind_by_name($stmt,':pn_adm',$this->historiaClinica['numeroAdmision'],32);
-            oci_bind_by_name($stmt,':pn_institucion',$this->codigoInstitucion,32);
+            oci_bind_by_name($stmt,':pn_institucion',$this->codigoInstitucion,2);
 
             //Motivo de consulta
             oci_bind_by_name($stmt,':pc_motivo_consulta_1',$this->motivoConsulta['motivoConsulta'],300); 
             oci_bind_by_name($stmt,':pc_antecedentes_personales',$this->motivoConsulta['antecedentesPersonales'],4000);  
             oci_bind_by_name($stmt,':pc_enfermedad_actual',$this->motivoConsulta['enfermedadActual'],4000);
+            oci_bind_by_name($stmt,':pc_alergias',$this->motivoConsulta['alergias'],200);
 
             //Revisión de órganos
             //
@@ -431,30 +625,17 @@ class HistoriaClinica extends Models implements IModels
             oci_bind_by_name($stmt,':pc_or_endocrino',$roEndocrino,4000); 
             oci_bind_by_name($stmt,':pc_or_nervioso',$roNervioso,4000);
 
-            //Antecedentes familiares 
-            $afCardiopatia = null;
-            $afDiabetes = null;
-            $afEnfermedadVascular = null;
-            $afHipertension = null;
-            $afCancer = null;
-            $afTuberculosis = null;
-            $afEnfermendadMental = null;
-            $afEnfermedadInfecciosa = null;
-            $afMalformacion = null;
-            $afOtro = null;
-
-            if (count($this->antecedentesFamiliares) > 0) { 
-                $afCardiopatia = $this->antecedentesFamiliares['cardiopatia'];
-                $afDiabetes = $this->antecedentesFamiliares['diabetes'];
-                $afEnfermedadVascular = $this->antecedentesFamiliares['enfermedadVascular'];
-                $afHipertension = $this->antecedentesFamiliares['hipertension'];
-                $afCancer = $this->antecedentesFamiliares['cancer'];
-                $afTuberculosis = $this->antecedentesFamiliares['tuberculosis'];
-                $afEnfermendadMental = $this->antecedentesFamiliares['enfermendadMental'];
-                $afEnfermedadInfecciosa = $this->antecedentesFamiliares['enfermedadInfecciosa'];
-                $afMalformacion = $this->antecedentesFamiliares['malformacion'];
-                $afOtro = $this->antecedentesFamiliares['otro'];
-            }
+            //Antecedentes familiares                             
+            $afCardiopatia = $this->antecedentesFamiliares['cardiopatia'];
+            $afDiabetes = $this->antecedentesFamiliares['diabetes'];
+            $afEnfermedadVascular = $this->antecedentesFamiliares['enfermedadVascular'];
+            $afHipertension = $this->antecedentesFamiliares['hipertension'];
+            $afCancer = $this->antecedentesFamiliares['cancer'];
+            $afTuberculosis = $this->antecedentesFamiliares['tuberculosis'];
+            $afEnfermendadMental = $this->antecedentesFamiliares['enfermendadMental'];
+            $afEnfermedadInfecciosa = $this->antecedentesFamiliares['enfermedadInfecciosa'];
+            $afMalformacion = $this->antecedentesFamiliares['malformacion'];
+            $afOtro = $this->antecedentesFamiliares['otro'];
 
             oci_bind_by_name($stmt,':pc_cardiopatia',$afCardiopatia,4000);  
             oci_bind_by_name($stmt,':pc_diabetes',$afDiabetes,4000);  
@@ -507,8 +688,8 @@ class HistoriaClinica extends Models implements IModels
             oci_bind_by_name($stmt,':pn_retorno',$codigoRetorno,32);
             oci_bind_by_name($stmt,':pc_mensaje',$mensajeRetorno,500);
                                    
-            $r = oci_execute($stmt, OCI_DEFAULT);
-            
+            $r = oci_execute($stmt, OCI_DEFAULT);            
+
             //Inserta los signos vitales
             foreach ($this->signosVitales as $signoVital) {
 
@@ -521,13 +702,32 @@ class HistoriaClinica extends Models implements IModels
                 $this->insertarDiagnostico($diagnostico, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $stmt, $this->conexion->getConexion());
             }   
                 
-            //Prescripciones
+            //Prescripciones (opcional)
             foreach ($this->prescripciones as $prescripcion) {
 
-                $this->insertarPrescripcion($prescripcion, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $stmt, $this->conexion->getConexion());
+                $this->insertarPrescripcion($prescripcion, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $this->numeroCompania, $stmt, $this->conexion->getConexion());
 
             }
+
+            //Recomendaciones No Farmacológicas (opcional)
+            if (count($this->recomendacionesNoFarmacologicas) > 0) {          
+                $this->insertarRecomendacionesNoFarmacologicas($this->recomendacionesNoFarmacologicas, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $stmt, $this->conexion->getConexion());
+            }
+            
+            //Pedidos de laboratorio 
+            $pedido = new Pedidos;
+
+            foreach ($this->pedidosLaboratorio as $pedidoLaboratorio) {
                 
+                $pedido->insertarPedidoLaboratorio($pedidoLaboratorio, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $this->numeroCompania, $stmt, $this->conexion->getConexion());
+            }
+
+            //Pedidos de Imagen
+            foreach ($this->pedidosImagen as $pedidoImagen) {
+                
+                $pedido->insertarPedidoImagen($pedidoImagen, $this->historiaClinica['numeroHistoriaClinica'], $this->historiaClinica['numeroAdmision'], $this->codigoInstitucion, $this->numeroCompania, $stmt, $this->conexion->getConexion());
+            }
+
             $rCommit = oci_commit($this->conexion->getConexion());
 
             return array(
@@ -585,7 +785,7 @@ class HistoriaClinica extends Models implements IModels
     /**
      * Inserta prescripción
     */
-    private function insertarPrescripcion($prescripcion, $numeroHistoriaClinica, $numeroAdmision, $codigoInstitucion, $stid, $conexion1)
+    private function insertarPrescripcion($prescripcion, $numeroHistoriaClinica, $numeroAdmision, $codigoInstitucion, $numeroCompania, $stid, $conexion1)
     {
         //Inicialización de variables
         $r = FALSE;
@@ -596,13 +796,25 @@ class HistoriaClinica extends Models implements IModels
             //Setear idioma y formatos en español para Oracle
             //$this->setSpanishOracle($stid);
 
-            $stid = oci_parse($conexion1, "BEGIN PRO_TEL_CEA_PRESCRIP_INS(:pn_hc, :pn_adm, :pn_institucion, :pc_descripcion, :pn_retorno, :pc_mensaje); END;");
+            $stid = oci_parse($conexion1, "BEGIN PRO_TEL_RECETA_INS(:pn_hc, :pn_adm, :pn_institucion, :pc_cia_naf,  :pc_desc_medicamento, :pn_cant_comprar, :pc_unid_comprar, :pn_cant_tomar, :pc_unid_tomar, :pn_frec_dosis, :pc_unid_dosis, :pn_frec_total, :pc_unid_total, :pc_indicacion, :pn_via_administracion, :pn_retorno, :pc_mensaje); END;");
                  
             // Bind the input num_entries argument to the $max_entries PHP variable             
             oci_bind_by_name($stid,":pn_hc",$numeroHistoriaClinica,32);
             oci_bind_by_name($stid,":pn_adm",$numeroAdmision,32);
             oci_bind_by_name($stid,":pn_institucion",$codigoInstitucion,32);
-            oci_bind_by_name($stid,":pc_descripcion",$prescripcion['descripcion'],4000);  
+            oci_bind_by_name($stid,":pc_cia_naf",$numeroCompania,2);
+
+            oci_bind_by_name($stid,":pc_desc_medicamento",$prescripcion['medicamento'], 120);  
+            oci_bind_by_name($stid,":pn_cant_comprar",$prescripcion['cantidadComprar'], 32);  
+            oci_bind_by_name($stid,":pc_unid_comprar",$prescripcion['unidadComprar'], 2);  
+            oci_bind_by_name($stid,":pn_cant_tomar",$prescripcion['cantidadTomar'], 32);  
+            oci_bind_by_name($stid,":pc_unid_tomar",$prescripcion['unidadTomar'], 2);  
+            oci_bind_by_name($stid,":pn_frec_dosis",$prescripcion['frecuenciaDosis'], 32);  
+            oci_bind_by_name($stid,":pc_unid_dosis",$prescripcion['unidadDosis'], 2);              
+            oci_bind_by_name($stid,":pn_frec_total",$prescripcion['frecuenciaTotal'], 32);  
+            oci_bind_by_name($stid,":pc_unid_total",$prescripcion['unidadTotal'], 2);  
+            oci_bind_by_name($stid,":pc_indicacion",$prescripcion['indicacion'], 120);  
+            oci_bind_by_name($stid,":pn_via_administracion",$prescripcion['viaAdministracion'], 32);  
 
             // Bind the output parameter
             oci_bind_by_name($stid,':pn_retorno',$codigoRetorno,32);
@@ -622,6 +834,55 @@ class HistoriaClinica extends Models implements IModels
                 //Llave primaria duplicada
                 if ($e['code'] == 1) {
                     $mensajeError = "Prescripción ya existe.";
+                }
+
+                oci_rollback($conexion1);
+                throw new Exception($mensajeError, $codigoError);                
+            }
+
+        }               
+    }
+
+    /**
+     * Inserta recomendaciones no farmacologicas
+    */
+    private function insertarRecomendacionesNoFarmacologicas($recomendaciones, $numeroHistoriaClinica, $numeroAdmision, $codigoInstitucion, $stid, $conexion1)
+    {
+        //Inicialización de variables
+        $r = FALSE;
+        $codigoError = -1;
+        $mensajeError;
+
+        try {         
+            //Setear idioma y formatos en español para Oracle
+            //$this->setSpanishOracle($stid);
+
+            $stid = oci_parse($conexion1, "BEGIN PRO_TEL_CEA_PRESCRIP_INS(:pn_hc, :pn_adm, :pn_institucion, :pc_descripcion, :pn_retorno, :pc_mensaje); END;");
+                 
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_hc",$numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_adm",$numeroAdmision,32);
+            oci_bind_by_name($stid,":pn_institucion",$codigoInstitucion,32);
+            oci_bind_by_name($stid,":pc_descripcion",$recomendaciones['descripcion'],4000);  
+
+            // Bind the output parameter
+            oci_bind_by_name($stid,':pn_retorno',$codigoRetorno,32);
+            oci_bind_by_name($stid,':pc_mensaje',$mensajeRetorno,500);
+
+            //Ejecuta el SP            
+            $r = oci_execute($stid, OCI_DEFAULT);
+                                        
+        } catch (Exception $ex) {
+            
+            if (!$r) {
+                $e = oci_error($stid);
+                
+                $mensajeError = "Error al insertar los datos de las recomendaciones no farmacológicas, consulte con el Administrador del Sistema. " . $e['message'];
+
+                //Verifica los mensajes de error del Oracle
+                //Llave primaria duplicada
+                if ($e['code'] == 1) {
+                    $mensajeError = "Recomendación no farmacológica ya existe.";
                 }
 
                 oci_rollback($conexion1);
@@ -701,6 +962,10 @@ class HistoriaClinica extends Models implements IModels
         $r = FALSE;
         $codigoError = -1;
         $mensajeError;
+        // Tipo de diagnóstico no tiene dato ni de presuntivo ni definitivo
+        $tipoDiagnostico = ''; 
+        // Clasificación diagnóstico es siempre egreso 'E'
+        $clasificacionDiagnostico = 'E'; 
 
         try {         
             //Setear idioma y formatos en español para Oracle
@@ -715,8 +980,8 @@ class HistoriaClinica extends Models implements IModels
 
             oci_bind_by_name($stid,":pc_cod_diagnostico",$diagnostico['codigo'],32);  
             oci_bind_by_name($stid,":pc_grupo_diagnostico",$diagnostico['grupo'],32);  
-            oci_bind_by_name($stid,":pc_tipo",$diagnostico['tipo'],1);  
-            oci_bind_by_name($stid,":pc_clasificacion_diagnostico",$diagnostico['clasificacionDiagnostico'],1);
+            oci_bind_by_name($stid,":pc_tipo",$tipoDiagnostico,1);  
+            oci_bind_by_name($stid,":pc_clasificacion_diagnostico",$clasificacionDiagnostico,1);
             oci_bind_by_name($stid,":pc_principal",$diagnostico['principal'],1);              
 
             // Bind the output parameter
@@ -774,6 +1039,24 @@ class HistoriaClinica extends Models implements IModels
                         throw new ModelsException($config['errors']['numeroHistoriaClinicaNumerico']['message'], 1);
                 }
             }
+
+            //Max row to fetch
+            if ($this->length == null){
+                 throw new ModelsException($config['errors']['lengthObligatorio']['message'], 1);
+            } else {
+                if ($this->length <= 0) {
+                     throw new ModelsException($config['errors']['lengthIncorrecto']['message'], 1);
+                }
+            }
+
+            //Min row to fetch
+            if ($this->start == null){
+                 throw new ModelsException($config['errors']['startObligatorio']['message'], 1);
+            } else {
+                if ($this->start < 0) {
+                    throw new ModelsException($config['errors']['startIncorrecto']['message'], 1);
+                }
+            }
             
             //Conectar a la BDD
             $this->conexion->conectar();
@@ -784,10 +1067,12 @@ class HistoriaClinica extends Models implements IModels
             $pc_datos = oci_new_cursor($this->conexion->getConexion());
 
             $stid = oci_parse($this->conexion->getConexion(), "BEGIN 
-                PRO_TEL_HISTORIAS_ANT(:pn_hc, :pc_datos); END;");
+                PRO_TEL_HISTORIAS_ANT(:pn_hc, :pn_num_reg, :pn_num_pag, :pc_datos); END;");
 
             // Bind the input num_entries argument to the $max_entries PHP variable             
             oci_bind_by_name($stid,":pn_hc",$this->numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_num_reg",$this->length,32);
+            oci_bind_by_name($stid,":pn_num_pag",$this->start,32);
             oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
            
             //Ejecuta el SP
@@ -812,14 +1097,15 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $historiasClinicasAnteriores[] = array(
-                    'numeroAdmision' => $row[0],
-                    'fechaAdmision' => $row[1],
-                    'especialidad' => $row[2],
-                    'origen' => $row[3],
-                    'nombreMedicoTratante' => $row[4],
-                    'codigoMedicoTratante' => $row[5],
-                    'esTeleconsulta' => $row[6],
-                    'registraHistoriaClinica' => $registraHistoriaClinica
+                    'numeroAdmision' => $row[0] == null ? '' : $row[0],
+                    'fechaAdmision' => $row[1] == null ? '' : $row[1],
+                    'especialidad' => $row[2] == null ? '' : $row[2],
+                    'origen' => $row[3] == null ? '' : $row[3],
+                    'nombreMedicoTratante' => $row[4] == null ? '' : $row[4],
+                    'codigoMedicoTratante' => $row[5] == null ? '' : $row[5],
+                    'esTeleconsulta' => $row[6] == null ? '' : $row[6],                    
+                    'registraHistoriaClinica' => $registraHistoriaClinica,
+                    'motivoCitaMedica' => $row[7] == null ? '' : $row[7]
                 );                
             }
 
@@ -827,7 +1113,9 @@ class HistoriaClinica extends Models implements IModels
             if ($existeDatos) {
                 return array(
                     'status' => true,                    
-                    'data'   => $historiasClinicasAnteriores
+                    'data'   => $historiasClinicasAnteriores,            
+                    'start' => $this->start,
+                    'length' => $this->length
                         );
             }
             else {
@@ -912,21 +1200,27 @@ class HistoriaClinica extends Models implements IModels
             //Resultados de la consulta
             $datosHistoriaClinica = array();
 
+            //Instancia los pedidos
+            $pedido = new Pedidos;
+
             while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
                 $existeDatos = true;
 
                 # RESULTADO OBJETO
                 $datosHistoriaClinica = array(
                     'numeroHistoriaClinica' => $this->numeroHistoriaClinica, 'numeroAdmision' => $this->numeroAdmision, 
-                    'usuarioCrea' => $row[3], 'usuarioModifica' => $row[4], 'primerApellidoPaciente' => $row[5], 'segundoApellidoPaciente' => $row[6], 'primerNombrePaciente' => $row[7], 'segundoNombrePaciente' => $row[8],
-                    'motivoConsulta' => array('motivoConsulta' => $row[0], 'antecedentesPersonales' => $row[1], 'enfermedadActual' => $row[2]),
+                    'usuarioCrea' => $row[3] == null ? '' : $row[3], 'usuarioModifica' => $row[4] == null ? '' : $row[4], 'primerApellidoPaciente' => $row[5] == null ? '' : $row[5], 'segundoApellidoPaciente' => $row[6] == null ? '' : $row[6], 'primerNombrePaciente' => $row[7] == null ? '' : $row[7], 'segundoNombrePaciente' => $row[8] == null ? '' : $row[8],  
+                    'motivoConsulta' => array('motivoConsulta' => $row[0] == null ? '' : $row[0], 'antecedentesPersonales' => $row[1] == null ? '' : $row[1], 'enfermedadActual' => $row[2] == null ? '' : $row[2], 'alergias' => $row[9] == null ? '' : $row[9]),
                     'revisionOrganos' => $this->obtenerRevisionOrganos($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
                     'antecedentesFamiliares' => $this->obtenerAntecedentesFamiliares($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
                     'signosVitales' => $this->obtenerSignosVitales($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
                     'examenFisico' => $this->obtenerExamenFisico($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
                     'diagnosticos' => $this->obtenerDiagnosticos($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
                     'evoluciones' => $this->obtenerEvoluciones($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
-                    'prescripciones' => $this->obtenerPrescripciones($this->numeroHistoriaClinica, $this->numeroAdmision, $stid)
+                    'prescripciones' => $this->obtenerDetalleRecetaMedica($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
+                    'recomendacionesNoFarmacologicas' => $this->obtenerRecomendacionesNoFarmacologicas($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
+                    'pedidosLaboratorio' => $pedido->consultarPedidos($this->numeroHistoriaClinica, $this->numeroAdmision, 'L', $stid, $this->conexion->getConexion()),
+                    'pedidosImagen' => $pedido->consultarPedidos($this->numeroHistoriaClinica, $this->numeroAdmision, 'I', $stid, $this->conexion->getConexion())
                 );
                 
             }
@@ -936,6 +1230,123 @@ class HistoriaClinica extends Models implements IModels
                 return array(
                     'status' => true,                    
                     'data'   => $datosHistoriaClinica
+                        );
+            }
+            else {
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+            }
+
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
+
+    /**
+     * Obtiene los datos de la receta médica
+    */
+    public function consultarRecetaMedica()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false;
+        $datosRecetaMedica[] = null;
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada   
+            $this->validarParametros();
+            
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_CAB_RECETA_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_hc",$this->numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_adm",$this->numeroAdmision,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $datosRecetaMedica = array();
+        
+            //Pedidos de laboratorio e imagen
+            $pedido = new Pedidos;
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $datosRecetaMedica = array(
+                    'numeroHistoriaClinica' => $this->numeroHistoriaClinica, 'numeroAdmision' => $this->numeroAdmision, 
+                    'nombresPaciente' => $row[0] == null ? '' : $row[0], 
+                    'alergias' => $row[1] == null ? '' : $row[1], 
+                    'edad' => $row[2] == null ? '' : $row[2], 
+                    'diagnostico' => $row[3] == null ? '' : $row[3], 
+                    'fechaPrescripcion' => $row[4] == null ? '' : $row[4], 
+                    'registroProfesional' => $row[5] == null ? '' : $row[5],
+                    'nombreMedico' => $row[6] == null ? '' : $row[6], 
+                    'especialidad' => $row[7] == null ? '' : $row[7],
+                    'cedula' => $row[8] == null ? '' : $row[8],
+                    'genero' => $row[9] == null ? '' : $row[9],
+                    'numeroCelular' => $row[10] == null ? '' : $row[10],
+                    'prescripciones' => $this->obtenerDetalleRecetaMedica($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
+                    'recomendacionesNoFarmacologicas' => $this->obtenerRecomendacionesNoFarmacologicas($this->numeroHistoriaClinica, $this->numeroAdmision, $stid),
+                    'pedidosLaboratorio' => $pedido->consultarPedidos($this->numeroHistoriaClinica, $this->numeroAdmision, 'L', $stid, $this->conexion->getConexion()),
+                    'pedidosImagen' => $pedido->consultarPedidos($this->numeroHistoriaClinica, $this->numeroAdmision, 'I', $stid, $this->conexion->getConexion())
+                );
+                
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return array(
+                    'status' => true,                    
+                    'data'   => $datosRecetaMedica
                         );
             }
             else {
@@ -1171,16 +1582,16 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $antecedentesFamiliares = array(
-                    'cardiopatia' => $row[0],
-                    'diabetes'=> $row[1],
-                    'enfermedadVascular' => $row[2],
-                    'hipertension' => $row[3],
-                    'cancer' => $row[4],
-                    'tuberculosis' => $row[5],
-                    'enfermendadMental' => $row[6],
-                    'enfermedadInfecciosa' => $row[7],
-                    'malformacion' => $row[8],
-                    'otro' => $row[9]
+                    'cardiopatia' => $row[0] == null ? '' : $row[0],
+                    'diabetes'=> $row[1] == null ? '' : $row[1],
+                    'enfermedadVascular' => $row[2] == null ? '' : $row[2],
+                    'hipertension' => $row[3] == null ? '' : $row[3],
+                    'cancer' => $row[4] == null ? '' : $row[4],
+                    'tuberculosis' => $row[5] == null ? '' : $row[5],
+                    'enfermendadMental' => $row[6] == null ? '' : $row[6],
+                    'enfermedadInfecciosa' => $row[7] == null ? '' : $row[7],
+                    'malformacion' => $row[8] == null ? '' : $row[8],
+                    'otro' => $row[9] == null ? '' : $row[9]
                 );
                 
             }
@@ -1266,16 +1677,16 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $antecedentesFamiliares = array(
-                    'cardiopatia' => $row[0],
-                    'diabetes'=> $row[1],
-                    'enfermedadVascular' => $row[2],
-                    'hipertension' => $row[3],
-                    'cancer' => $row[4],
-                    'tuberculosis' => $row[5],
-                    'enfermendadMental' => $row[6],
-                    'enfermedadInfecciosa' => $row[7],
-                    'malformacion' => $row[8],
-                    'otro' => $row[9]
+                    'cardiopatia' => $row[0] == null ? '' : $row[0],
+                    'diabetes'=> $row[1] == null ? '' : $row[1],
+                    'enfermedadVascular' => $row[2] == null ? '' : $row[2],
+                    'hipertension' => $row[3] == null ? '' : $row[3],
+                    'cancer' => $row[4] == null ? '' : $row[4],
+                    'tuberculosis' => $row[5] == null ? '' : $row[5],
+                    'enfermendadMental' => $row[6] == null ? '' : $row[6],
+                    'enfermedadInfecciosa' => $row[7] == null ? '' : $row[7],
+                    'malformacion' => $row[8] == null ? '' : $row[8],
+                    'otro' => $row[9] == null ? '' : $row[9]
                 );
                 
             }
@@ -1344,18 +1755,18 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $signosVitales[] = array(
-                    'fecha' => $row[0],
-                    'temperaturaBucal'=> $row[1],
-                    'temperaturaAxiliar' => $row[2],
-                    'temperaturaRectal' => $row[3],
-                    'taSistolica' => $row[4],
-                    'taDiastolica' => $row[5],
-                    'pulso' => $row[6],
-                    'frecuenciaRespiratoria' => $row[7],
-                    'perimetroCef' => $row[8],
-                    'peso' => $row[9],
-                    'talla' => $row[10],
-                    'imc' => $row[11]
+                    'fecha' => $row[0] == null ? '' : $row[0],
+                    'temperaturaBucal'=> $row[1] == null ? '' : $row[1],
+                    'temperaturaAxiliar' => $row[2] == null ? '' : $row[2],
+                    'temperaturaRectal' => $row[3] == null ? '' : $row[3],
+                    'taSistolica' => $row[4] == null ? '' : $row[4],
+                    'taDiastolica' => $row[5] == null ? '' : $row[5],
+                    'pulso' => $row[6] == null ? '' : $row[6],
+                    'frecuenciaRespiratoria' => $row[7] == null ? '' : $row[7],
+                    'perimetroCef' => $row[8] == null ? '' : $row[8],
+                    'peso' => $row[9] == null ? '' : $row[9],
+                    'talla' => $row[10] == null ? '' : $row[10],
+                    'imc' => $row[11] == null ? '' : $row[11]
                 );
                 
             }
@@ -1408,13 +1819,13 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $examenFisico = array(
-                    'cabeza1R' => $row[0],
-                    'cuello2R'=> $row[1],
-                    'torax3R' => $row[2],
-                    'abdomen4R' => $row[3],
-                    'pelvis5R' => $row[4],
-                    'extremidades6R' => $row[5],
-                    'planTratamiento' => $row[6]
+                    'cabeza1R' => $row[0] == null ? '' : $row[0],
+                    'cuello2R'=> $row[1] == null ? '' : $row[1],
+                    'torax3R' => $row[2] == null ? '' : $row[2],
+                    'abdomen4R' => $row[3] == null ? '' : $row[3],
+                    'pelvis5R' => $row[4] == null ? '' : $row[4],
+                    'extremidades6R' => $row[5] == null ? '' : $row[5],
+                    'planTratamiento' => $row[6] == null ? '' : $row[6]
                 );
                 
             }
@@ -1480,13 +1891,13 @@ class HistoriaClinica extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $diagnosticos[] = array(
-                    'numeroDiagnostico' => $row[0],
-                    'codigo'=> $row[1],
-                    'grupo' => $row[2],
-                    'descripcion' => $row[3],
-                    'tipo' => $row[4],
-                    'clasificacionDiagnostico' => $row[5],
-                    'principal' => $row[6]
+                    'numeroDiagnostico' => $row[0] == null ? '' : $row[0],
+                    'codigo'=> $row[1] == null ? '' : $row[1],
+                    'grupo' => $row[2] == null ? '' : $row[2],
+                    'descripcion' => $row[3] == null ? '' : $row[3],
+                    'tipo' => $row[4] == null ? '' : $row[4],
+                    'clasificacionDiagnostico' => $row[5] == null ? '' : $row[5],
+                    'principal' => $row[6] == null ? '' : $row[6]
                 );
                 
             }
@@ -1565,10 +1976,73 @@ class HistoriaClinica extends Models implements IModels
         }
     }
 
-/**
-     * Obtiene los datos de las prescripciones
+    /**
+     * Obtiene los datos de las Recomendaciones No Farmacologicas
     */
-    public function obtenerPrescripciones($numeroHistoriaClinica, $numeroAdmision, $stid)
+    public function obtenerRecomendacionesNoFarmacologicas($numeroHistoriaClinica, $numeroAdmision, $stid)
+    {
+        global $config;
+
+        //Inicialización de variables
+        $pc_datos = null;
+        $existeDatos = false;
+        $recomendacionesNoFarmacologicas = null;
+
+        try {         
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_CEA_PRESC_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_hc",$numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_adm",$numeroAdmision,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $recomendacionesNoFarmacologicas = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $recomendacionesNoFarmacologicas = array(
+                    'codigo' => $row[0],
+                    'descripcion'=> $row[1] == null ? '' : $row[1]
+                );
+                
+                break;
+            }
+
+            //Valida si la consulta no tiene datos
+            if(!$existeDatos){
+                $recomendacionesNoFarmacologicas = array(
+                    'codigo' => '',
+                    'descripcion'=> ''
+                );
+            }
+
+            return $recomendacionesNoFarmacologicas;            
+               
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+        }
+    }
+
+    /**
+     * Obtiene el detalle de la receta médica
+     */
+    public function obtenerDetalleRecetaMedica($numeroHistoriaClinica, $numeroAdmision, $stid)
     {
         global $config;
 
@@ -1580,7 +2054,7 @@ class HistoriaClinica extends Models implements IModels
         try {         
             $pc_datos = oci_new_cursor($this->conexion->getConexion());
 
-            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_CEA_PRESC_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_RECETA_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
 
             // Bind the input num_entries argument to the $max_entries PHP variable             
             oci_bind_by_name($stid,":pn_hc",$numeroHistoriaClinica,32);
@@ -1602,7 +2076,19 @@ class HistoriaClinica extends Models implements IModels
                 # RESULTADO OBJETO
                 $prescripciones[] = array(
                     'codigo' => $row[0],
-                    'descripcion'=> $row[1]
+                    'medicamento'=> $row[1],
+                    'cantidadComprar'=> $row[2] == null ? '' : $row[2],
+                    'cantidadComprarLetras'=> $row[3] == null ? '' : $row[3],
+                    'unidadComprar'=> $row[4] == null ? '' : $row[4],
+                    'cantidadTomar'=> $row[5] == null ? '' : $row[5],
+                    'unidadTomar'=> $row[6] == null ? '' : $row[6],
+                    'frecuenciaDosis'=> $row[7] == null ? '' : $row[7],
+                    'unidadDosis'=> $row[8] == null ? '' : $row[8],
+                    'frecuenciaTotal'=> $row[9] == null ? '' : $row[9],
+                    'unidadTotal'=> $row[10] == null ? '' : $row[10],
+                    'viaAdministracion'=> $row[11] == null ? '' : $row[11],
+                    'indicacion'=> $row[12] == null ? '' : $row[12],
+                    'fecha'=> $row[13] == null ? '' : $row[13]
                 );
                 
             }
@@ -1618,6 +2104,108 @@ class HistoriaClinica extends Models implements IModels
 
         }
     }
+
+    /**
+     * Consultar las evoluciones anteriores
+    */
+    public function consultarEvolucionesAnteriores()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false;
+        $evolucionesAnteriores[] = null;
+        $registraHistoriaClinica;
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada   
+            $this->validarParametros();
+             
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN 
+                PRO_TEL_CEA_EVOL_ANT_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_hc",$this->numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_adm",$this->numeroAdmision,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+           
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $evolucionesAnteriores = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+               
+                # RESULTADO OBJETO
+                $evolucionesAnteriores[] = array(
+                    'descripcion' => $row[0],
+                    'fecha' => $row[1]
+                );                
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return array(
+                    'status' => true,                    
+                    'data'   => $evolucionesAnteriores
+                        );
+            }
+            else {
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+            }
+
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
+
     /**
      * __construct()
      */

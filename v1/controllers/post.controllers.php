@@ -142,6 +142,27 @@ $app->post('/historias-clinicas/reporte-002', function () use ($app) {
 });
 
 /**
+ * Consulta la Receta Médica
+ *
+ * @return json
+ */
+$app->post('/historias-clinicas/receta-medica', function () use ($app) {
+    $u = new Model\HistoriaClinica;
+    return $app->json($u->consultarRecetaMedica());
+});
+
+/**
+ * Consulta las evoluciones anteriores
+ *
+ * @return json
+ */
+$app->post('/historias-clinicas/evoluciones-anteriores', function () use ($app) {
+    $u = new Model\HistoriaClinica;
+    return $app->json($u->consultarEvolucionesAnteriores());
+});
+
+
+/**
  * Consulta los rangos
  *
  * @return json
@@ -221,6 +242,17 @@ $app->post('/citas/re-agendar', function () use ($app) {
     return $app->json($u->reAgendar());
 });
 
+
+/**
+ * Permite consultar el motivo de la cita
+ *
+ * @return json
+ */
+/*$app->post('/citas/motivo-cita', function () use ($app) {
+    $u = new Model\Citas;
+    return $app->json($u->consultarMotivoCita());
+});*/
+
 /**
  * Permite registrar el pago de una consulta
  *
@@ -238,7 +270,7 @@ $app->post('/pacientes/pago', function () use ($app) {
  */
 $app->post('/pacientes/datos', function () use ($app) {
     $u = new Model\Pacientes;
-    return $app->json($u->obtenerDatosPaciente());
+    return $app->json($u->obtenerDatosPaciente1());
 });
 
 /**
@@ -280,6 +312,56 @@ $app->post('/agendas-medico/eliminar-por-rango-fechas', function () use ($app) {
 $app->post('/agendas-medico/agendas-creadas', function () use ($app) {
     $u = new Model\Agendas;
     return $app->json($u->consultarAgendasCreadas());
+});
+
+/**
+ * Permite consultar los examenes de Laboratorio
+ *
+ * @return json
+ */
+$app->post('/examenes/laboratorio', function () use ($app) {
+    $u = new Model\Examenes;
+    return $app->json($u->consultarExamenesLaboratorio());
+});
+
+/**
+ * Permite insertar los examenes de Laboratorio
+ *
+ * @return json
+ */
+$app->post('/pedidos/crear-pedidos-laboratorio', function () use ($app) {
+    $u = new Model\Pedidos;
+    return $app->json($u->crearPedidosLaboratorio());
+});
+
+/**
+ * Permite insertar los examenes de Imagen
+ *
+ * @return json
+ */
+$app->post('/pedidos/crear-pedidos-imagen', function () use ($app) {
+    $u = new Model\Pedidos;
+    return $app->json($u->crearPedidosImagen());
+});
+
+/**
+ * Consulta los pedidos Laboratorio/Imagen
+ *
+ * @return json
+ */
+$app->post('/pedidos/datos', function () use ($app) {
+    $u = new Model\Pedidos;
+    return $app->json($u->consultarPedidosLaboratorioImagen());
+});
+
+/**
+ * Permite consultar los examenes de Imagen
+ *
+ * @return json
+ */
+$app->post('/examenes/imagen', function () use ($app) {
+    $u = new Model\Examenes;
+    return $app->json($u->consultarExamenesImagen());
 });
 
 /**
