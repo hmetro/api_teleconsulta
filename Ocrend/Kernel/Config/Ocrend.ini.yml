@@ -44,6 +44,14 @@ database:
       host: 172.16.9.77
       driver: oci8
       charset: UTF8
+    oracle: 
+      dbname: desa
+      user: gema
+      password : gemad15
+      port: 1521
+      host: 172.16.9.77
+      driver: oci8
+      charset: UTF8
     sqlite3:
       file: '___ROOT___Ocrend/Kernel/Database/Drivers/Sqlite/db.sqlite3'
     
@@ -499,16 +507,127 @@ errors:
     code: 4135
   startDateIncorrectaFechaHoy: 
     message: Fecha de inicio no puede ser mayor que la fecha de hoy.
-    code: 4036
+    code: 4136
   endDateIncorrectaFechaHoy: 
     message: Fecha fin no puede ser menor que la fecha de hoy.
-    code: 4037
+    code: 4137
   startDateIncorrectaFechaAyer: 
     message: Fecha de inicio no puede ser mayor que la fecha de ayer.
-    code: 4038
+    code: 4138
   startDateMenorFechaHoy: 
     message: Fecha de inicio no puede ser menor que la fecha de hoy.
-    code: 4039
+    code: 4139
+  numeroTurnoTamanio:
+    message: El tamaño del motivo de la cita médica no debe ser mayor que 150 caracteres.
+    code: 4140
+  motivoCitaObligatorio:
+    message: Motivo de la cita médica es obligatorio.
+    code: 4141   
+  tipoCitaObligatorio:
+    message: Tipo de cita médica es obligatorio.
+    code: 4142   
+  tipoCitaNoPermitido:
+    message: Valor para el Tipo de cita médica no permitido.
+    code: 4143     
+  medicamentoPrescripcionObligatorio:
+    message: Medicamento es obligatorio.
+    code: 4144
+  cantidadComprarPrescripcionObligatorio:
+    message: Cantidad a comprar es obligatorio.
+    code: 4145    
+  unidadComprarPrescripcionObligatorio:
+    message: Unidad a comprar es obligatorio.
+    code: 4146    
+  cantidadTomarPrescripcionObligatorio:
+    message: Cantidad a tomar es obligatorio.
+    code: 4147    
+  unidadTomarPrescripcionObligatorio:
+    message: Unidad a tomar es obligatorio.
+    code: 4148    
+  frecuenciaDosisPrescripcionObligatorio:
+    message: Frecuencia dosis es obligatorio.
+    code: 4149    
+  unidadDosisPrescripcionObligatorio:
+    message: Unidad dosis es obligatorio.
+    code: 4150    
+  viaAdministracionPrescripcionObligatorio:
+    message: Vía administración es obligatorio.
+    code: 4151
+  cantidadComprarPrescripcionNumerico :
+    message: Cantidad a comprar debe ser numérico.
+    code: 4152
+  cantidadTomarPrescripcionNumerico:
+    message: Cantidad a tomar debe ser numérico.
+    code: 4153
+  frecuenciaDosisPrescripcionNumerico:
+    message: Frecuencia dosis debe ser numérico.
+    code: 4154
+  frecuenciaTotalPrescripcionNumerico:
+    message: Frecuencia total debe ser numérico.
+    code: 4155
+  startNumerico:
+    message: Start debe ser numérico.
+    code: 4156
+  lengthNumerico:
+    message: Length debe ser numérico.
+    code: 4157 
+  pedidoObligatorio:
+    message: El pedido es obligatorio
+    code: 4158   
+  pedidosObligatorio:
+    message: Debe insertar al menos un pedido.
+    code: 4159
+  codigoExamenTamanio:
+    message: El tamaño del código de examen, no debe ser mayor que 9 caracteres.
+    code: 4160    
+  descripcionExamenTamanio:
+    message: El tamaño de la descripción de examen, no debe ser mayor que 120 caracteres.
+    code: 4161
+  seccionRecomendacionesNoFarmacologicasObligatorio:
+    message: Sección recomendaciones no farmacológicas obligatorio.
+    code: 4162
+  descripcionRecomendacionNoFarmacologicaObligatorio:
+    message: Descripción de la sección recomendaciones no farmacológicas debe ser obligatorio.
+    code: 4163
+  seccionPedidosLaboratorioObligatorio:
+    message: Sección pedidos de Laboratorio obligatorio.
+    code: 4164
+  seccionPedidosImagenObligatorio:
+    message: Sección pedidos de Imagen obligatorio.
+    code: 4165
+  principalDiagnosticoMasDeUno:
+    message: Debe existir un sólo diagnóstico principal.
+    code: 4166
+  campoCardiopatiaNoExiste: 
+    message: Campo Cardiopatía no existe.
+    code: 4167
+  campoDiabetesNoExiste: 
+    message: Campo Diabetes no existe.
+    code: 4168
+  campoEnfermedadVascularNoExiste: 
+    message: Campo Enfermedad vascular no existe.
+    code: 4169
+  campoHipertensionNoExiste: 
+    message: Campo Hipertensión no existe.
+    code: 4170
+  campoCancerNoExiste: 
+    message: Campo Cáncer no existe.
+    code: 4171
+  campoTuberculosisNoExiste: 
+    message: Campo Tuberculosis no existe.
+    code: 4172
+  campoEnfermendadMentalNoExiste: 
+    message: Campo Enfermedad mental no existe.
+    code: 4173
+  campoEnfermedadInfecciosaNoExiste: 
+    message: Campo Enfermedad infecciosa no existe.
+    code: 4174
+  campoMalformacionNoExiste: 
+    message: Campo Malformación no existe.
+    code: 4175
+  campoOtroNoExiste: 
+    message: Campo Otro no existe.
+    code: 4176   
   codigoErrorInfraestructura: 
     message: Consulte con el Administrador del Sistema.
     code: 9999     

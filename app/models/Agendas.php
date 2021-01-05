@@ -347,20 +347,20 @@ class Agendas extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $agendasCreadasMedico[] = array(
-                    'tipoHorario' => $row[0],
-                    'descripcionTipoHorario' => $row[1],
-                    'duracionMinutos' => $row[2],
-                    'desde' => $row[3],
-                    'hasta' => $row[4],
-                    'lunes' => $row[5],
-                    'martes' => $row[6],
-                    'miercoles' => $row[7],
-                    'jueves' => $row[8],
-                    'viernes' => $row[9],
-                    'sabado' => $row[10],
-                    'domingo' => $row[11],
-                    'horaInicial' => $row[12],
-                    'horaFinal' => $row[13]
+                    'tipoHorario' => $row[0] == null ? '' : $row[0],
+                    'descripcionTipoHorario' => $row[1] == null ? '' : $row[1],
+                    'duracionMinutos' => $row[2] == null ? '' : $row[2],
+                    'desde' => $row[3] == null ? '' : $row[3],
+                    'hasta' => $row[4] == null ? '' : $row[4],
+                    'lunes' => $row[5] == null ? '' : $row[5],
+                    'martes' => $row[6] == null ? '' : $row[6],
+                    'miercoles' => $row[7] == null ? '' : $row[7],
+                    'jueves' => $row[8] == null ? '' : $row[8],
+                    'viernes' => $row[9] == null ? '' : $row[9],
+                    'sabado' => $row[10] == null ? '' : $row[10],
+                    'domingo' => $row[11] == null ? '' : $row[11],
+                    'horaInicial' => $row[12] == null ? '' : $row[12],
+                    'horaFinal' => $row[13] == null ? '' : $row[13]
                 );               
             }
 

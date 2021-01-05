@@ -457,9 +457,9 @@ class Medicos extends Models implements IModels
             $fechaInicial = $this->fechaInicial;
             $sd = new DateTime($fechaInicial);
             $fechaHoy = new DateTime();
-
-            if (date_format($sd, 'd-m-Y') < date_format($fechaHoy, 'd-m-Y')) {
-                    throw new ModelsException($config['errors']['startDateMenorFechaHoy']['message'], 1);
+            
+            if ($sd->getTimestamp() < $fechaHoy->getTimestamp()) {
+                throw new ModelsException($config['errors']['startDateMenorFechaHoy']['message'], 1);
             }
 
             if ($this->fechaFinal != null) {
@@ -895,19 +895,19 @@ class Medicos extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $agendaPasadaMedico[] = array(
-                    'codigoHorario' => $row[0],
-                    'numeroTurno'=> $row[1],
-                    'fecha' => $row[2],
-                    'horaInicio' => $row[3],
-                    'horaFin' => $row[4],
-                    'primerApellidoPaciente' => $row[5],
-                    'segundoApellidoPaciente' => $row[6],
-                    'primerNombrePaciente' => $row[7],
-                    'segundoNombrePaciente' => $row[8],
-                    'codigoPersonaPaciente' => $row[9],
-                    'numeroHistoriaClinica' => $row[10],
-                    'asistio' => $row[11], 
-                    'numeroAdmision' => $row[12]
+                    'codigoHorario' => $row[0] == null ? '' : $row[0],
+                    'numeroTurno'=> $row[1] == null ? '' : $row[1],
+                    'fecha' => $row[2] == null ? '' : $row[2],
+                    'horaInicio' => $row[3] == null ? '' : $row[3],
+                    'horaFin' => $row[4] == null ? '' : $row[4],
+                    'primerApellidoPaciente' => $row[5] == null ? '' : $row[5],
+                    'segundoApellidoPaciente' => $row[6] == null ? '' : $row[6],
+                    'primerNombrePaciente' => $row[7] == null ? '' : $row[7],
+                    'segundoNombrePaciente' => $row[8] == null ? '' : $row[8],
+                    'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
+                    'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10],
+                    'asistio' => $row[11] == null ? '' : $row[11], 
+                    'numeroAdmision' => $row[12] == null ? '' : $row[12]
                 );            
             }
 
@@ -1013,19 +1013,19 @@ class Medicos extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $agendaPasadaMedicoNombres[] = array(
-                    'codigoHorario' => $row[0],
-                    'numeroTurno'=> $row[1],
-                    'fecha' => $row[2],
-                    'horaInicio' => $row[3],
-                    'horaFin' => $row[4],
-                    'primerApellidoPaciente' => $row[5],
-                    'segundoApellidoPaciente' => $row[6],
-                    'primerNombrePaciente' => $row[7],
-                    'segundoNombrePaciente' => $row[8],
-                    'codigoPersonaPaciente' => $row[9],
-                    'numeroHistoriaClinica' => $row[10],
-                    'asistio' => $row[11], 
-                    'numeroAdmision' => $row[12]
+                    'codigoHorario' => $row[0] == null ? '' : $row[0],
+                    'numeroTurno'=> $row[1] == null ? '' : $row[1],
+                    'fecha' => $row[2] == null ? '' : $row[2],
+                    'horaInicio' => $row[3] == null ? '' : $row[3],
+                    'horaFin' => $row[4] == null ? '' : $row[4],
+                    'primerApellidoPaciente' => $row[5] == null ? '' : $row[5],
+                    'segundoApellidoPaciente' => $row[6] == null ? '' : $row[6],
+                    'primerNombrePaciente' => $row[7] == null ? '' : $row[7],
+                    'segundoNombrePaciente' => $row[8] == null ? '' : $row[8],
+                    'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
+                    'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10],
+                    'asistio' => $row[11] == null ? '' : $row[11], 
+                    'numeroAdmision' => $row[12] == null ? '' : $row[12]
                 );            
             }
 
@@ -1083,7 +1083,7 @@ class Medicos extends Models implements IModels
     */
     public function consultarCitasPacientePendientes()
     {
-        global $config;
+        global $config, $http;
 
         //Inicialización de variables
         $stid = null;
@@ -1130,19 +1130,19 @@ class Medicos extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $agendaPendienteMedico[] = array(
-                    'codigoHorario' => $row[0],
-                    'numeroTurno'=> $row[1],
-                    'fecha' => $row[2],
-                    'horaInicio' => $row[3],
-                    'horaFin' => $row[4],
-                    'primerApellidoPaciente' => $row[5],
-                    'segundoApellidoPaciente' => $row[6],
-                    'primerNombrePaciente' => $row[7],
-                    'segundoNombrePaciente' => $row[8],
-                    'codigoPersonaPaciente' => $row[9],
-                    'numeroHistoriaClinica' => $row[10], 
-                    'numeroAdmision' => $row[11],
-                    'asistio' => $row[12]
+                    'codigoHorario' => $row[0] == null ? '' : $row[0],
+                    'numeroTurno'=> $row[1] == null ? '' : $row[1],
+                    'fecha' => $row[2] == null ? '' : $row[2],
+                    'horaInicio' => $row[3] == null ? '' : $row[3],
+                    'horaFin' => $row[4] == null ? '' : $row[4],
+                    'primerApellidoPaciente' => $row[5] == null ? '' : $row[5],
+                    'segundoApellidoPaciente' => $row[6] == null ? '' : $row[6],
+                    'primerNombrePaciente' => $row[7] == null ? '' : $row[7],
+                    'segundoNombrePaciente' => $row[8] == null ? '' : $row[8],
+                    'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
+                    'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10], 
+                    'numeroAdmision' => $row[11] == null ? '' : $row[11],
+                    'asistio' => $row[12] == null ? '' : $row[12]
                 );
                 
             }
@@ -1248,19 +1248,19 @@ class Medicos extends Models implements IModels
 
                 # RESULTADO OBJETO
                 $agendaMedico[] = array(
-                    'codigoHorario' => $row[0],
-                    'numeroTurno'=> $row[1],
-                    'fecha' => $row[2],
-                    'horaInicio' => $row[3],
-                    'horaFin' => $row[4],
-                    'primerApellidoPaciente' => $row[5],
-                    'segundoApellidoPaciente' => $row[6],
-                    'primerNombrePaciente' => $row[7],
-                    'segundoNombrePaciente' => $row[8],
-                    'codigoPersonaPaciente' => $row[9],
-                    'numeroHistoriaClinica' => $row[10], 
-                    'numeroAdmision' => $row[11],
-                    'asistio' => $row[12]
+                    'codigoHorario' => $row[0] == null ? '' : $row[0],
+                    'numeroTurno'=> $row[1] == null ? '' : $row[1],
+                    'fecha' => $row[2] == null ? '' : $row[2],
+                    'horaInicio' => $row[3] == null ? '' : $row[3],
+                    'horaFin' => $row[4] == null ? '' : $row[4],
+                    'primerApellidoPaciente' => $row[5] == null ? '' : $row[5],
+                    'segundoApellidoPaciente' => $row[6] == null ? '' : $row[6],
+                    'primerNombrePaciente' => $row[7] == null ? '' : $row[7],
+                    'segundoNombrePaciente' => $row[8] == null ? '' : $row[8],
+                    'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
+                    'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10], 
+                    'numeroAdmision' => $row[11] == null ? '' : $row[11],
+                    'asistio' => $row[12] == null ? '' : $row[12]
                 );
                 
             }

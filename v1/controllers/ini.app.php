@@ -37,11 +37,11 @@ $app->before(function () use ($app) {
                 //explode('/', $http->getPathInfo())[1] != 'historias-clinicas' and
                 //and explode('/', $http->getPathInfo())[1] != 'diagnosticos' and
                 //and explode('/', $http->getPathInfo())[1] != 'citas' and
-                //and explode('/', $http->getPathInfo())[1] != 'pacientes' and 
+                //explode('/', $http->getPathInfo())[1] != 'pacientes' and 
                 //and explode('/', $http->getPathInfo())[1] != 'facturas' and
                 //and explode('/', $http->getPathInfo())[1] != 'agendas-medico' and
-                explode('/', $http->getPathInfo())[1] != 'login' 
-                and explode('/', $http->getPathInfo())[1] != 'register'
+                explode('/', $http->getPathInfo())[1] != 'login' and
+                explode('/', $http->getPathInfo())[1] != 'register'
                 /*and explode('/', $http->getPathInfo())[1] != 'auth'
                 and explode('/', $http->getPathInfo())[1] != 'verify'
                 and explode('/', $http->getPathInfo())[1] != 'generate'

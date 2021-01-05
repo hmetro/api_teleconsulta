@@ -106,7 +106,7 @@ class Account extends Models implements IModels
 
             # EXTRAER VALOR CEDULA DEL TOKEN PARA CONSULTA
             $this->getAuthorizationn();
-
+            
             if ($this->USER->PRO == 1) {
 
                 # Conectar base de datos

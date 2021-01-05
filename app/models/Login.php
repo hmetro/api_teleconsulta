@@ -331,6 +331,9 @@ class Login extends Models implements IModels
             # Verificar si usuario existe en base de datos GEMA
             $this->validacionBDDGEMA();
 
+            print 'Login';
+
+
             # Verificar si uusuario ya tiene una cuenta electrónica y esta activa
             $this->cuentaElectronica();
 

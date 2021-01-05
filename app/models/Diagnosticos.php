@@ -36,6 +36,7 @@ class Diagnosticos extends Models implements IModels
     private $conexion;
     private $start  = 0;
     private $length  = 10;
+    private $nombreDiagnostico;
     
     /**
      * Asigna los parámetros de entrada
@@ -55,6 +56,18 @@ class Diagnosticos extends Models implements IModels
      */
     private function validarParametros(){
         global $config;
+
+        //Nombre diagnostico        
+        if ($this->nombreDiagnostico == null){
+            $this->nombreDiagnostico = "%";
+        } else {
+            $this->nombreDiagnostico = $this->quitar_tildes(mb_strtoupper($this->sanear_string($this->nombreDiagnostico), 'UTF-8'));
+
+             # Setear valores para busquedas dividadas
+            if (stripos($this->nombreDiagnostico, ' ')) {
+                $this->nombreDiagnostico = str_replace(' ', '%', $this->nombreDiagnostico);
+            }
+        }
 
         //Min row to fetch
         if ($this->start == null){
@@ -123,9 +136,10 @@ class Diagnosticos extends Models implements IModels
 
             $pc_datos = oci_new_cursor($this->conexion->getConexion());
 
-            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DIAGNOSTICOS(:pn_num_reg, :pn_num_pag, :pc_datos); END;");
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN PRO_TEL_DIAGNOSTICOS(:pc_nombre_diag, :pn_num_reg, :pn_num_pag, :pc_datos); END;");
 
             // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pc_nombre_diag",$this->nombreDiagnostico,100);
             oci_bind_by_name($stid,":pn_num_reg",$this->length,32);
             oci_bind_by_name($stid,":pn_num_pag",$this->start,32);
             oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
@@ -195,6 +209,44 @@ class Diagnosticos extends Models implements IModels
             //Cierra la conexión
             $this->conexion->cerrar();
         }
+    }
+
+    /*
+    * Quita las tildes de una cadena
+    */
+    private function quitar_tildes($cadena)
+    {
+        $no_permitidas = array("%", "é", "í", "ó", "ú", "É", "Í", "Ó", "Ú", "ñ", "À", "Ã", "Ì", "Ò", "Ù", "Ã™", "Ã ", "Ã¨", "Ã¬", "Ã²", "Ã¹", "ç", "Ç", "Ã¢", "ê", "Ã®", "Ã´", "Ã»", "Ã‚", "ÃŠ", "ÃŽ", "Ã”", "Ã›", "ü", "Ã¶", "Ã–", "Ã¯", "Ã¤", "«", "Ò", "Ã", "Ã„", "Ã‹");
+        $permitidas    = array("", "e", "i", "o", "u", "E", "I", "O", "U", "n", "N", "A", "E", "I", "O", "U", "a", "e", "i", "o", "u", "c", "C", "a", "e", "i", "o", "u", "A", "E", "I", "O", "U", "u", "o", "O", "i", "a", "e", "U", "I", "A", "E");
+        $texto         = str_replace($no_permitidas, $permitidas, $cadena);
+        return $texto;
+    }
+
+     private function sanear_string($string)
+    {
+
+        $string = trim($string);
+
+        //Esta parte se encarga de eliminar cualquier caracter extraño
+        $string = str_replace(
+            array(">", "< ", ";", ",", ":", "%", "|"),
+            ' ',
+            $string
+        );
+
+        /*
+
+        if ($this->lang == 'en') {
+        $string = str_replace(
+        array("CALLE", "TORRE MEDICA", "CONSULTORIO", "CONS."),
+        array('STREET', 'MEDICAL TOWER', 'DOCTOR OFFICE', 'DOCTOR OFFICE'),
+        $string
+        );
+        }
+
+         */
+
+        return trim($string);
     }
 
     /**
