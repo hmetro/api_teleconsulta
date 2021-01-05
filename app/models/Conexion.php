@@ -12,7 +12,7 @@
         public function __construct(){
             global $config;
 
-            $driver = $config['database']['drivers']['oracle_produccion'];
+            $driver = $config['database']['drivers']['oracle_pruebas'];
 
             $this->servidor   = "(DESCRIPTION=( ADDRESS_LIST= (ADDRESS= (PROTOCOL=TCP) (HOST=" . $driver['host'] . ") (PORT=" . $driver['port'] . ")))( CONNECT_DATA= (SID=" . $driver['dbname'] . ") ))";
             $this->usuario    = $driver['user'];

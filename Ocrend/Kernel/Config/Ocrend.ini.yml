@@ -37,13 +37,11 @@ database:
       driver: oci8
       charset: UTF8
     oracle_pruebas: 
-      dbname: conclina
-      user: TELEMEDICINA
-      password : TELEME2020
+      dbname: desa
+      user: gema
+      password : gemad15
       port: 1521
-      host: 172.16.3.247
-      servicename: conclina
-      service: true
+      host: 172.16.9.77            
       driver: oci8
       charset: UTF8
     sqlite3:
@@ -70,7 +68,7 @@ twig:
 build:
   production: false
   name: Web API REST v1.0.0
-  url: http://api.hospitalmetropolitano.org/teleconsulta/
+  url: http://api.hospitalmetropolitano.org/teleconsulta/beta/
   ducumentosRetencionesProv: '//172.16.3.125/face/CONCLINARETENCIONES/TestTxtXml/Procesadas/Autorizados/ComprobantesRetenciones/'
   timezone: America/Guayaquil
   version: 3.0.1
@@ -87,12 +85,12 @@ sessions:
 api:
   active: true
   origin: '*' 
-  url: https://api.hospitalmetropolitano.org/teleconsulta/v1/
+  url: https://api.hospitalmetropolitano.org/teleconsulta/beta/v1/
 
 # Configuración de ruta
 router:
   ssl: false
-  path: api.hospitalmetropolitano.org/teleconsulta/
+  path: api.hospitalmetropolitano.org/teleconsulta/beta/
 
 
 # Errores Globales de la api  ERROR MAPERAR ERRORES DE PAGOS 4020
