@@ -117,8 +117,8 @@ class Medicos extends Models implements IModels
         global $config;
 
         //Código del médico
-        if ($this->codigoMedico == null){
-             throw new ModelsException($config['errors']['codigoMedicoObligatorio']['message'], 1);
+        if ($this->codigoMedico == null){            
+            throw new ModelsException($config['errors']['codigoMedicoObligatorio']['message'], 1);
         } else {
             //Validaciones de tipo de datos y rangos permitidos
             if (!is_numeric($this->codigoMedico)) {
@@ -314,9 +314,9 @@ class Medicos extends Models implements IModels
         global $config;
 
         //Código del médico
-        if ($this->codigoMedico == null){
-             throw new ModelsException($config['errors']['codigoMedicoObligatorio']['message'], 1);
-        } else {
+        if ($this->codigoMedico != null){            
+             //throw new ModelsException($config['errors']['codigoMedicoObligatorio']['message'], 1);
+             //} else {
             //Validaciones de tipo de datos y rangos permitidos
             if (!is_numeric($this->codigoMedico)) {
                     throw new ModelsException($config['errors']['codigoMedicoNumerico']['message'], 1);
@@ -800,14 +800,14 @@ class Medicos extends Models implements IModels
             if ($existeDatos) {
                 return array(
                     'status' => true,                    
-                    'data'   => $citasDisponibles
+                    'data'   => $citasDisponibles,
+                    'start' => $this->start,
+                    'length' => $this->length
                         );
             }
             else {
                 throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
-            }
-
-            
+            }            
 
         } catch (ModelsException $e) {
 
@@ -907,7 +907,8 @@ class Medicos extends Models implements IModels
                     'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
                     'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10],
                     'asistio' => $row[11] == null ? '' : $row[11], 
-                    'numeroAdmision' => $row[12] == null ? '' : $row[12]
+                    'numeroAdmision' => $row[12] == null ? '' : $row[12], 
+                    'tipoCita' => $row[13] == null ? '' : $row[13]
                 );            
             }
 
@@ -1025,7 +1026,8 @@ class Medicos extends Models implements IModels
                     'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
                     'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10],
                     'asistio' => $row[11] == null ? '' : $row[11], 
-                    'numeroAdmision' => $row[12] == null ? '' : $row[12]
+                    'numeroAdmision' => $row[12] == null ? '' : $row[12], 
+                    'tipoCita' => $row[13] == null ? '' : $row[13]
                 );            
             }
 
@@ -1142,7 +1144,12 @@ class Medicos extends Models implements IModels
                     'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
                     'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10], 
                     'numeroAdmision' => $row[11] == null ? '' : $row[11],
-                    'asistio' => $row[12] == null ? '' : $row[12]
+                    'asistio' => $row[12] == null ? '' : $row[12],
+                    'codigoMedico' => $row[13] == null ? '' : $row[13],
+                    'nombresMedico' => $row[14] == null ? '' : $row[14],
+                    'codigoEspecialidad' => $row[15] == null ? '' : $row[15],
+                    'descripcionEspecialidad' => $row[16] == null ? '' : $row[16],
+                    'tipoCita' => $row[17] == null ? '' : $row[17]
                 );
                 
             }
@@ -1260,7 +1267,8 @@ class Medicos extends Models implements IModels
                     'codigoPersonaPaciente' => $row[9] == null ? '' : $row[9],
                     'numeroHistoriaClinica' => $row[10] == null ? '' : $row[10], 
                     'numeroAdmision' => $row[11] == null ? '' : $row[11],
-                    'asistio' => $row[12] == null ? '' : $row[12]
+                    'asistio' => $row[12] == null ? '' : $row[12],
+                    'tipoCita' => $row[13] == null ? '' : $row[13]
                 );
                 
             }

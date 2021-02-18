@@ -132,6 +132,16 @@ $app->post('/historias-clinicas/antecedentes-familiares-admision-anterior', func
 });
 
 /**
+ * Obtiene los datos de los Antecedentes Personales de una admisión anterior
+ *
+ * @return json
+ */
+$app->post('/historias-clinicas/antecedentes-personales-admision-anterior', function () use ($app) {
+    $u = new Model\HistoriaClinica;
+    return $app->json($u->obtenerAntecedentesPersonalesAdmisionAnterior());
+});
+
+/**
  * Obtiene la url del Reporte MSP002
  *
  * @return json
@@ -264,6 +274,16 @@ $app->post('/pacientes/pago', function () use ($app) {
 });
 
 /**
+ * Permite registrar el agedamiento y admisión de una consulta
+ *
+ * @return json
+ */
+$app->post('/pacientes/agendamiento-admision', function () use ($app) {
+    $u = new Model\Pacientes;
+    return $app->json($u->realizarAgendamientoAdmisionConsulta());
+});
+
+/**
  * Consulta los datos del paciente
  *
  * @return json
@@ -363,6 +383,17 @@ $app->post('/examenes/imagen', function () use ($app) {
     $u = new Model\Examenes;
     return $app->json($u->consultarExamenesImagen());
 });
+
+/**
+ * Permite dar de alta Telemedicina
+ *
+ * @return json
+ */
+$app->post('/admisiones/dar-alta-telemedicina', function () use ($app) {
+    $u = new Model\Admisiones;
+    return $app->json($u->darAltaTelemedicina());
+});
+
 
 /**
  * Auntenticar api del hospital modelo LOGIN function auth_Api

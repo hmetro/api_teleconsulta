@@ -237,6 +237,7 @@ class Auth extends Models implements IModels
 
     public function IpClient()
     {
+        global $http;
         $aud = '';
 
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {

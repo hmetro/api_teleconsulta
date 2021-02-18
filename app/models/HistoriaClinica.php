@@ -259,9 +259,10 @@ class HistoriaClinica extends Models implements IModels
                         throw new ModelsException($config['errors']['camposSignosVitalesObligatorio']['message'], 1);
                 } else {
                     //Fecha
+                    
+                    //Temperatura bucal                   
+                    if ($signoVital['temperaturaBucal'] != null and !is_numeric($signoVital['temperaturaBucal'])){            
 
-                    //Temperatura bucal
-                    if ($signoVital['temperaturaBucal'] != null and !is_numeric($signoVital['temperaturaBucal'])){
                         throw new ModelsException($config['errors']['temperaturaBucalNumerico']['message'], 1);
                     }
               
@@ -311,9 +312,9 @@ class HistoriaClinica extends Models implements IModels
                         }
 
                     //IMC
-                    /*if ($signoVital['imc'] != null and !is_numeric($signoVital['imc'])){
+                    if ($signoVital['imc'] != null and !is_numeric($signoVital['imc'])){
                             throw new ModelsException($config['errors']['imcNumerico']['message'], 1);
-                        }*/   
+                        }
                 }
             }
         }
@@ -913,16 +914,53 @@ class HistoriaClinica extends Models implements IModels
             oci_bind_by_name($stid,":pn_adm",$numeroAdmision,32);
             oci_bind_by_name($stid,":pn_institucion",$codigoInstitucion,32);
             oci_bind_by_name($stid,":pd_fecha",$signoVital['fecha'],32);  
-
+           
+           
+            if ($signoVital['temperaturaBucal'] != null){
+                $signoVital['temperaturaBucal'] = number_format($signoVital['temperaturaBucal'], 2, ',', '');
+            }            
+           
             oci_bind_by_name($stid,":pn_temp_bucal",$signoVital['temperaturaBucal'],32);  
-            oci_bind_by_name($stid,":pn_temp_axilar",$signoVital['temperaturaAxiliar'],32);oci_bind_by_name($stid,":pn_temp_rectal",$signoVital['temperaturaRectal'],32);  
+
+            if ($signoVital['temperaturaAxiliar'] != null){
+                $signoVital['temperaturaAxiliar'] = number_format($signoVital['temperaturaAxiliar'], 2, ',', '');
+            }
+
+            oci_bind_by_name($stid,":pn_temp_axilar",$signoVital['temperaturaAxiliar'],32);
+
+            if ($signoVital['temperaturaRectal'] != null){
+                $signoVital['temperaturaRectal'] = number_format($signoVital['temperaturaRectal'], 2, ',', '');
+            }
+
+            oci_bind_by_name($stid,":pn_temp_rectal",$signoVital['temperaturaRectal'],32);  
+
             oci_bind_by_name($stid,":pn_ta_sistolica",$signoVital['taSistolica'],32);  
             oci_bind_by_name($stid,":pn_ta_diastolica",$signoVital['taDiastolica'],32);  
             oci_bind_by_name($stid,":pn_pulso",$signoVital['pulso'],32);  
             oci_bind_by_name($stid,":pn_frecuencia_resp",$signoVital['frecuenciaRespiratoria'],32);  
+
+            if ($signoVital['perimetroCef'] != null){
+                $signoVital['perimetroCef'] = number_format($signoVital['perimetroCef'], 2, ',', '');
+            }
+
             oci_bind_by_name($stid,":pn_perimetro_cef",$signoVital['perimetroCef'],32);  
+
+            if ($signoVital['peso'] != null){
+                $signoVital['peso'] = number_format($signoVital['peso'], 2, ',', '');
+            }
+
             oci_bind_by_name($stid,":pn_peso",$signoVital['peso'],32);  
+
+            if ($signoVital['talla'] != null){
+                $signoVital['talla'] = number_format($signoVital['talla'], 2, ',', '');
+            }
+
             oci_bind_by_name($stid,":pn_talla",$signoVital['talla'],32);  
+
+            if ($signoVital['imc'] != null){
+                $signoVital['imc'] = number_format($signoVital['imc'], 2, ',', '');
+            }
+
             oci_bind_by_name($stid,":pn_imc",$signoVital['imc'],32);  
 
             // Bind the output parameter
@@ -1429,6 +1467,9 @@ class HistoriaClinica extends Models implements IModels
             //Resultados de la consulta
             $datosURL = array();
 
+            //Se reemplaza el servidor OAS por el subdominio             
+            $url = str_replace($config['url_reportes']['oas'], $config['url_reportes']['subdominio'], $url);
+
             return array(
                     'status' => true,                    
                     'data'   => $datosURL = array('enlace' => $url)
@@ -1642,6 +1683,106 @@ class HistoriaClinica extends Models implements IModels
     }
 
     /**
+     * Obtiene los datos de los antecedentes personales de una admisión anterior
+    */
+    public function obtenerAntecedentesPersonalesAdmisionAnterior()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stid = null;
+        $pc_datos = null;
+        $existeDatos = false;
+        $antecedentesPersonales = null;
+
+        try {         
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada   
+            $this->validarParametros();
+            
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+             //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stid);
+
+            $pc_datos = oci_new_cursor($this->conexion->getConexion());
+
+            $stid = oci_parse($this->conexion->getConexion(), "BEGIN                 
+                PRO_TEL_CEA_ANT_PE_ANT_LEE(:pn_hc, :pn_adm, :pc_datos); END;");
+
+            // Bind the input num_entries argument to the $max_entries PHP variable             
+            oci_bind_by_name($stid,":pn_hc",$this->numeroHistoriaClinica,32);
+            oci_bind_by_name($stid,":pn_adm",$this->numeroAdmision,32);
+            oci_bind_by_name($stid, ":pc_datos", $pc_datos, -1, OCI_B_CURSOR);
+
+            //Ejecuta el SP
+            oci_execute($stid);
+
+            //Ejecutar el REF CURSOR como un ide de sentencia normal
+            oci_execute($pc_datos);  
+
+            //Resultados de la consulta
+            $antecedentesPersonales = array();
+
+            while (($row = oci_fetch_array($pc_datos, OCI_BOTH+OCI_RETURN_NULLS)) != false) {
+                $existeDatos = true;
+
+                # RESULTADO OBJETO
+                $antecedentesPersonales = array(                    
+                    'antecedentesPersonales'=> $row[1] == null ? '' : $row[1]
+                );
+                
+            }
+
+            //Verificar si la consulta devolvió datos
+            if ($existeDatos) {
+                return array(
+                    'status' => true,                    
+                    'data'   => $antecedentesPersonales
+                        );
+            }
+            else {
+                throw new ModelsException($config['errors']['noExistenResultados']['message'], 1);
+            }
+               
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => -1
+                );
+
+        } finally {
+            //Libera recursos de conexión
+            if ($stid != null){
+                oci_free_statement($stid);
+            }
+
+            //Libera recursos de conexión
+            if ($pc_datos != null){
+                oci_free_statement($pc_datos);
+            }
+            
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+    }
+
+    /**
      * Obtiene los datos de los antecedentes familiares
     */
     public function obtenerAntecedentesFamiliares($numeroHistoriaClinica, $numeroAdmision, $stid)
@@ -1756,17 +1897,17 @@ class HistoriaClinica extends Models implements IModels
                 # RESULTADO OBJETO
                 $signosVitales[] = array(
                     'fecha' => $row[0] == null ? '' : $row[0],
-                    'temperaturaBucal'=> $row[1] == null ? '' : $row[1],
-                    'temperaturaAxiliar' => $row[2] == null ? '' : $row[2],
-                    'temperaturaRectal' => $row[3] == null ? '' : $row[3],
+                    'temperaturaBucal'=> $row[1] == null ? '' : str_replace(',', '.', $row[1]),
+                    'temperaturaAxiliar' => $row[2] == null ? '' : str_replace(',', '.', $row[2]),
+                    'temperaturaRectal' => $row[3] == null ? '' : str_replace(',', '.', $row[3]),
                     'taSistolica' => $row[4] == null ? '' : $row[4],
                     'taDiastolica' => $row[5] == null ? '' : $row[5],
                     'pulso' => $row[6] == null ? '' : $row[6],
                     'frecuenciaRespiratoria' => $row[7] == null ? '' : $row[7],
-                    'perimetroCef' => $row[8] == null ? '' : $row[8],
-                    'peso' => $row[9] == null ? '' : $row[9],
-                    'talla' => $row[10] == null ? '' : $row[10],
-                    'imc' => $row[11] == null ? '' : $row[11]
+                    'perimetroCef' => $row[8] == null ? '' : str_replace(',', '.', $row[8]),
+                    'peso' => $row[9] == null ? '' : str_replace(',', '.', $row[9]),
+                    'talla' => $row[10] == null ? '' : str_replace(',', '.', $row[10]),
+                    'imc' => $row[11] == null ? '' : str_replace(',', '.', $row[11])
                 );
                 
             }

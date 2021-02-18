@@ -32,6 +32,13 @@ $app->before(function () use ($app) {
 
         # Verificar si es peticion Auth o Index
         if ($http->getPathInfo() != '/') {
+            # Verificar SI EXISTE TOKEN Y SI ES VALIDO
+            $u = new Model\Auth;
+
+            #Consigue la ruta del recurso
+            $arrRuta = explode('/', $http->getPathInfo());
+            $ruta = $arrRuta[count($arrRuta)-1];
+            
             # Peticion index
             if (//explode('/', $http->getPathInfo())[1] != 'medicos' and                 
                 //explode('/', $http->getPathInfo())[1] != 'historias-clinicas' and
@@ -40,8 +47,9 @@ $app->before(function () use ($app) {
                 //explode('/', $http->getPathInfo())[1] != 'pacientes' and 
                 //and explode('/', $http->getPathInfo())[1] != 'facturas' and
                 //and explode('/', $http->getPathInfo())[1] != 'agendas-medico' and
-                explode('/', $http->getPathInfo())[1] != 'login' and
-                explode('/', $http->getPathInfo())[1] != 'register'
+                $ruta != 'login' and
+                $ruta != 'register' and
+                $ruta != 'pago'
                 /*and explode('/', $http->getPathInfo())[1] != 'auth'
                 and explode('/', $http->getPathInfo())[1] != 'verify'
                 and explode('/', $http->getPathInfo())[1] != 'generate'
@@ -55,15 +63,14 @@ $app->before(function () use ($app) {
                 and explode('/', $http->getPathInfo())[1] != 'portafolio'
                 and explode('/', $http->getPathInfo())[1] != 'forms'
                 and explode('/', $http->getPathInfo())[1] != 'sms'*/                
-            ) {
-
-                # Verificar SI EXISTE TOKEN Y SI ES VALIDO
-                $u     = new Model\Auth;
+            ) {                                                  
                 $error = $u->Check($http->headers->get("Authorization"));
                 if (!is_bool($error)) {
                     throw new ModelsException($error['message'], $error['errorCode']);
                 }
-
+            }
+            else if ($ruta == 'pago' and $u->IpClient() != '142.93.21.240'){
+                throw new ModelsException("Not Authorized. ", 4033);
             }
 
         }
