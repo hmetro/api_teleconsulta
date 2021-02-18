@@ -602,6 +602,133 @@ class Pacientes extends Models implements IModels
             
             //Valida el código de retorno del SP
             if($codigoRetorno == 0){
+
+                //Cita cancelada exitosamente               
+                return array(
+                        'status' => true,
+                        'data'   => [],
+                        'message'   => $mensajeRetorno
+                    );
+            } elseif ($codigoRetorno == 1) {
+                //Mensajes de aplicación
+                throw new ModelsException($mensajeRetorno, $codigoRetorno);
+            } else {
+                //Mensajes de errores técnicos
+                throw new Exception($mensajeRetorno, -1);
+            }
+                   
+        } catch (ModelsException $e) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $e->getMessage(),
+                    'errorCode' => $e->getCode()
+                );
+
+        } catch (Exception $ex) {
+
+            return array(
+                    'status'    => false,
+                    'data'      => [],
+                    'message'   => $ex->getMessage(),
+                    'errorCode' => $ex->getCode()
+                );
+
+        }
+        finally {
+            //Libera recursos de conexión
+            if ($stmt != null){
+                oci_free_statement($stmt);
+            }
+
+            //Cierra la conexión
+            $this->conexion->cerrar();
+        }
+
+    }
+
+    /**
+     * Permite realizar el agendamiento de una consulta
+     * y la creación de la admisión de una paciente
+     */
+    public function realizarAgendamientoAdmisionConsulta()
+    {
+        global $config;
+
+        //Inicialización de variables
+        $stmt = null;
+        $codigoRetorno = null;
+        $mensajeRetorno = null;
+
+        //Siempre es 1 para el Hospital Metropolitano
+        //$this->codigoInstitucion  = 1;
+
+        try {
+
+            //Asignar parámetros de entrada            
+            $this->setParameters();
+
+            //Validar parámetros de entrada    
+            $this->validarParametrosAgendamientoAdmisionConsulta();
+
+            //Conectar a la BDD
+            $this->conexion->conectar();
+
+            //Setear idioma y formatos en español para Oracle
+            $this->setSpanishOracle($stmt);
+             
+            $stmt = oci_parse($this->conexion->getConexion(),'BEGIN PRO_REGISTRA_DATOS_WEB(:pc_codigo_espec_medico, :pc_codigo_horario, :pc_fk_arinda_no_arti, :pc_identificacion_paciente, :pc_monto, :pc_numero_turno, :pc_servicio,  :pc_valor_cobertura, :pc_apellidos_factura, :pc_correo_factura, :pc_direccion_factura, :pc_identificacion_factura, :pc_nombres_factura, :pc_tipo_id_factura, :pc_identificacion_titular, :pc_nombre_titular, :pc_numero_autorizacion, :pc_numero_voucher, :pc_tipo_tarjeta_credito, :pc_telefono, :pc_tipo_cita, :pc_error, :pc_mensaje_error); END;');
+
+            // Bind the input parameter
+            //Obligatorios
+            oci_bind_by_name($stmt,':pc_codigo_espec_medico',$this->codigoEspecialidadMedico,32);
+            oci_bind_by_name($stmt,':pc_codigo_horario',$this->codigoHorario,32);
+            oci_bind_by_name($stmt,':pc_fk_arinda_no_arti',$this->codigoConsulta,32);
+            oci_bind_by_name($stmt,':pc_identificacion_paciente',$this->indentificacionPaciente,32);
+            oci_bind_by_name($stmt,':pc_monto',$this->valorConsulta,32); 
+            oci_bind_by_name($stmt,':pc_numero_turno',$this->numeroTurno,32); 
+            oci_bind_by_name($stmt,':pc_servicio',$this->codigoLugarAtencion,32);
+            oci_bind_by_name($stmt,':pc_valor_cobertura',$this->valorCobertura,32); 
+            oci_bind_by_name($stmt,':pc_tipo_cita',$this->tipoCita,1); 
+            
+            //No obligaorios
+            $this->apellidosFactura = null;
+            $this->correoFactura = null;
+            $this->direccionFactura = null;
+            $this->identificacionFactura = null; 
+            $this->nombresFactura = null; 
+            $this->tipoIdentificacionFactura = null;
+            $this->identificacionTitular = null;
+            $this->nombreTitular = null;
+            $this->numeroAutorizacion = null;
+            $this->numeroVoucher = null;
+            $this->tipoTarjetaCredito = null;
+            $this->telefono = null;
+            
+
+            oci_bind_by_name($stmt,':pc_apellidos_factura',$this->apellidosFactura,120); 
+            oci_bind_by_name($stmt,':pc_correo_factura',$this->correoFactura,120); 
+            oci_bind_by_name($stmt,':pc_direccion_factura',$this->direccionFactura,250); 
+            oci_bind_by_name($stmt,':pc_identificacion_factura',$this->identificacionFactura,32);
+            oci_bind_by_name($stmt,':pc_nombres_factura',$this->nombresFactura,120); 
+            oci_bind_by_name($stmt,':pc_tipo_id_factura',$this->tipoIdentificacionFactura,32); 
+            oci_bind_by_name($stmt,':pc_identificacion_titular',$this->identificacionTitular,32); 
+            oci_bind_by_name($stmt,':pc_nombre_titular',$this->nombreTitular,120); 
+            oci_bind_by_name($stmt,':pc_numero_autorizacion',$this->numeroAutorizacion,32); 
+            oci_bind_by_name($stmt,':pc_numero_voucher',$this->numeroVoucher,32); 
+            oci_bind_by_name($stmt,':pc_tipo_tarjeta_credito',$this->tipoTarjetaCredito,32); 
+            oci_bind_by_name($stmt,':pc_telefono',$this->telefono,32);             
+             
+            // Bind the output parameter
+            oci_bind_by_name($stmt,':pc_error',$codigoRetorno,32);
+            oci_bind_by_name($stmt,':pc_mensaje_error',$mensajeRetorno,500);
+                                   
+            oci_execute($stmt);
+            
+            //Valida el código de retorno del SP
+            if($codigoRetorno == 0){
+
                 //Cita cancelada exitosamente               
                 return array(
                         'status' => true,
@@ -726,6 +853,92 @@ class Pacientes extends Models implements IModels
         }
         
     }
+
+    /**
+     * Valida los parámetros de entrada agendamiento admisión consulta
+     */
+    private function validarParametrosAgendamientoAdmisionConsulta(){
+        global $config;
+
+        //Código de la especialidad del médico
+        if ($this->codigoEspecialidadMedico == null){
+             throw new ModelsException($config['errors']['codigoEspecialidadMedicoObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoEspecialidadMedico)) {
+                    throw new ModelsException($config['errors']['codigoEspecialidadMedicoNumerico']['message'], 1);
+            }
+        }
+
+        //Código de horario
+        if ($this->codigoHorario == null){
+             throw new ModelsException($config['errors']['codigoHorarioObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoHorario)) {
+                    throw new ModelsException($config['errors']['codigoHorarioNumerico']['message'], 1);
+            }
+        }
+
+        //Código de consulta
+        if ($this->codigoConsulta == null){
+             throw new ModelsException($config['errors']['codigoConsultaObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoConsulta)) {
+                    throw new ModelsException($config['errors']['codigoConsultaNumerico']['message'], 1);
+            }
+        }
+
+        //Identificación del paciente
+        if ($this->indentificacionPaciente == null){
+             throw new ModelsException($config['errors']['identificacionObligatorio']['message'], 1);
+        } 
+       
+        //Monto
+        if ($this->valorConsulta == null){
+             throw new ModelsException($config['errors']['valorConsultaObligatorio']['message'], 1);
+        } 
+
+        //Número de turno
+        if ($this->numeroTurno == null){
+             throw new ModelsException($config['errors']['numeroTurnoObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->numeroTurno)) {
+                    throw new ModelsException($config['errors']['numeroTurnoNumerico']['message'], 1);
+            }
+        }
+
+        //Código del lugar de atención
+        if ($this->codigoLugarAtencion == null){
+             throw new ModelsException($config['errors']['codigoLugarAtencionObligatorio']['message'], 1);
+        } else {
+            //Validaciones de tipo de datos y rangos permitidos
+            if (!is_numeric($this->codigoLugarAtencion)) {
+                    throw new ModelsException($config['errors']['codigoLugarAtencionNumerico']['message'], 1);
+            }
+        }
+
+        //Cobertura
+        if ($this->valorCobertura == null){
+             throw new ModelsException($config['errors']['valorCoberturaObligatorio']['message'], 1);
+        }      
+
+        //Tipo de consulta        
+         if ($this->tipoCita == null){
+             throw new ModelsException($config['errors']['tipoCitaObligatorio']['message'], 1);
+        } 
+        else {
+            //Validaciones de tipo de datos y rangos permitidos
+            //S = Subsecuente / P = Primera vez
+            if (!Helper\Strings::contain($this->tipoCita, 'SP')) {
+                    throw new ModelsException($config['errors']['tipoCitaNoPermitido']['message'], 1);
+            }
+        }   
+        
+    }
+
 
     /**
      * Valida los parámetros de entrada creación del paciente

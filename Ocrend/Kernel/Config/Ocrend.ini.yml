@@ -92,6 +92,10 @@ router:
   ssl: false
   path: api.hospitalmetropolitano.org/teleconsulta/beta/
 
+#URL reportes
+url_reportes:
+    oas: http://proyectodesarro.hm.med.ec:8889
+    subdominio: http://proyectodesarro.hm.med.ec:8889
 
 # Errores Globales de la api  ERROR MAPERAR ERRORES DE PAGOS 4020
 errors:
@@ -434,7 +438,7 @@ errors:
   camposSignosVitalesObligatorio: 
     message: Al menos un campo (sin tomar en cuenta la fecha) de signos vitales debe ser obligatorio.
     code: 4115
-  temperaturaBucalNumericoNumerico: 
+  temperaturaBucalNumerico: 
     message: Temperatura bucal debe ser numérico.
     code: 4116
   temperaturaAxiliarNumerico: 
@@ -620,6 +624,15 @@ errors:
   campoOtroNoExiste: 
     message: Campo Otro no existe.
     code: 4176   
+  valorConsultaObligatorio:
+    message: Campo valor de la consulta obligatorio.
+    code: 4177 
+  valorCoberturaObligatorio:
+    message: Campo valor de la cobertura obligatorio.
+    code: 4178    
+  anuladoObligatorio:  
+    message: Campo anulado obligatorio.
+    code: 4179  
   codigoErrorInfraestructura: 
     message: Consulte con el Administrador del Sistema.
     code: 9999     
